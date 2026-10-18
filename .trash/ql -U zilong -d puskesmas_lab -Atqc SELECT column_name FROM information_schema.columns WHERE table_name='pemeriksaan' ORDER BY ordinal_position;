@@ -1,0 +1,14 @@
+  column_name   |          data_type          | is_nullable |             column_default              
+----------------+-----------------------------+-------------+-----------------------------------------
+ id             | integer                     | NO          | nextval('pemeriksaan_id_seq'::regclass)
+ pasien_id      | integer                     | NO          | 
+ dokter_perujuk | character varying           | YES         | 
+ analis_id      | integer                     | NO          | 
+ validator_id   | integer                     | YES         | 
+ status         | character varying           | NO          | 'menunggu'::character varying
+ waktu_daftar   | timestamp without time zone | NO          | CURRENT_TIMESTAMP
+ waktu_selesai  | timestamp without time zone | YES         | 
+ is_cito        | boolean                     | NO          | false
+ catatan_dokter | text                        | YES         | 
+(10 rows)
+

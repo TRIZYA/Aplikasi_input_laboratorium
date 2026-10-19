@@ -35,6 +35,7 @@ function DokterPage() {
   const auth = getStoredAuth()
   const token = auth?.token
   const currentUserId = auth?.user?.id
+  const isDemoUser = auth?.user?.role === 'demo'
 
   const [pemeriksaanRows, setPemeriksaanRows] = useState([])
   const [selectedId, setSelectedId] = useState(null)
@@ -157,6 +158,12 @@ function DokterPage() {
       description="Tinjau hasil laboratorium, validasi pemeriksaan, dan buat catatan klinis."
       accentClass="dokter"
     >
+      {isDemoUser && (
+        <div className="error-box" style={{ marginBottom: '1rem' }}>
+          Akun demo hanya dapat melihat hasil dan riwayat. Validasi, revisi, dan persetujuan klinis tidak tersedia untuk role ini.
+        </div>
+      )}
+
       {isDashboard ? (
         <div className="panel-stack dashboard-summary">
           <section className="panel">
@@ -291,14 +298,16 @@ function DokterPage() {
                       />
                     </label>
 
-                    <div className="action-row">
-                      <button type="button" className="action-button danger" onClick={() => handleValidasi('revisi')} disabled={submitting}>
-                        {submitting ? 'Memproses...' : 'Tolak / Revisi'}
-                      </button>
-                      <button type="button" className="action-button success" onClick={() => handleValidasi('selesai')} disabled={submitting}>
-                        {submitting ? 'Memproses...' : 'Validasi & Sahkan'}
-                      </button>
-                    </div>
+                    {!isDemoUser && (
+                      <div className="action-row">
+                        <button type="button" className="action-button danger" onClick={() => handleValidasi('revisi')} disabled={submitting}>
+                          {submitting ? 'Memproses...' : 'Tolak / Revisi'}
+                        </button>
+                        <button type="button" className="action-button success" onClick={() => handleValidasi('selesai')} disabled={submitting}>
+                          {submitting ? 'Memproses...' : 'Validasi & Sahkan'}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </section>

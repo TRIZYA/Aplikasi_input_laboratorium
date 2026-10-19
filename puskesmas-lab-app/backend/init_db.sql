@@ -14,7 +14,7 @@ CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'analis', 'dokter')),
+    role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'analis', 'dokter', 'demo')),
     nama_lengkap VARCHAR(100) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -76,7 +76,8 @@ INSERT INTO users (username, password_hash, role, nama_lengkap)
 VALUES
     ('admin2', '$2b$10$Xt6Uga/DHxzD/uwYAEv0E.Kua1AtCN/het2CB4UeOUcINCmXR93s2', 'admin', 'Admin Laboratorium'),
     ('analis1', '$2b$10$l42zRQT2XmnCo0nux0BnzuSYcFJvUHmkfVRVXcn7rEIEzUwJsJWzO', 'analis', 'Analis Laboratorium'),
-    ('dokter1', '$2b$10$0XINDH9lN/7qbRCGGoMq.e1bqfeLmO4r.Cfdfc2sFIS5YLF2cKfZm', 'dokter', 'Dokter Puskesmas');
+    ('dokter1', '$2b$10$0XINDH9lN/7qbRCGGoMq.e1bqfeLmO4r.Cfdfc2sFIS5YLF2cKfZm', 'dokter', 'Dokter Puskesmas'),
+    ('demo1', '$2b$10$3Ej4Cjw78qbqoUxO6Ah6qubt4ULoUKjdzG1iW33uBJRysn6LMKi3y', 'demo', 'Demo Read Only');
 
 INSERT INTO pasien (nik, nama_pasien, tanggal_lahir, jenis_kelamin, alamat, no_hp)
 VALUES

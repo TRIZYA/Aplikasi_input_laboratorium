@@ -30,6 +30,7 @@ export const getRoleLandingPath = (role) => {
   if (role === 'admin') return '/admin'
   if (role === 'analis') return '/analis'
   if (role === 'dokter') return '/dokter'
+  if (role === 'demo') return '/admin'
   return '/login'
 }
 

@@ -53,7 +53,7 @@ function App() {
         <Route
           path="/admin"
           element={
-            <RequireRole allowedRoles={['admin']}>
+            <RequireRole allowedRoles={['admin', 'demo']}>
               <AdminPage />
             </RequireRole>
           }
@@ -61,7 +61,7 @@ function App() {
         <Route
           path="/admin/users"
           element={
-            <RequireRole allowedRoles={['admin']}>
+            <RequireRole allowedRoles={['admin', 'demo']}>
               <AdminPage />
             </RequireRole>
           }
@@ -69,7 +69,7 @@ function App() {
         <Route
           path="/admin/kategori"
           element={
-            <RequireRole allowedRoles={['admin']}>
+            <RequireRole allowedRoles={['admin', 'demo']}>
               <AdminPage />
             </RequireRole>
           }
@@ -77,7 +77,7 @@ function App() {
         <Route
           path="/admin/parameter"
           element={
-            <RequireRole allowedRoles={['admin']}>
+            <RequireRole allowedRoles={['admin', 'demo']}>
               <AdminPage />
             </RequireRole>
           }
@@ -86,7 +86,7 @@ function App() {
         <Route
           path="/analis"
           element={
-            <RequireRole allowedRoles={['analis']}>
+            <RequireRole allowedRoles={['analis', 'demo']}>
               <AnalisPage />
             </RequireRole>
           }
@@ -94,7 +94,7 @@ function App() {
         <Route
           path="/analis/pasien"
           element={
-            <RequireRole allowedRoles={['analis']}>
+            <RequireRole allowedRoles={['analis', 'demo']}>
               <AnalisPage />
             </RequireRole>
           }
@@ -102,7 +102,7 @@ function App() {
         <Route
           path="/analis/order"
           element={
-            <RequireRole allowedRoles={['analis']}>
+            <RequireRole allowedRoles={['analis', 'demo']}>
               <AnalisPage />
             </RequireRole>
           }
@@ -110,7 +110,7 @@ function App() {
         <Route
           path="/analis/hasil"
           element={
-            <RequireRole allowedRoles={['analis']}>
+            <RequireRole allowedRoles={['analis', 'demo']}>
               <AnalisPage />
             </RequireRole>
           }
@@ -119,7 +119,7 @@ function App() {
         <Route
           path="/dokter"
           element={
-            <RequireRole allowedRoles={['dokter']}>
+            <RequireRole allowedRoles={['dokter', 'demo']}>
               <DokterPage />
             </RequireRole>
           }
@@ -127,7 +127,7 @@ function App() {
         <Route
           path="/dokter/validasi"
           element={
-            <RequireRole allowedRoles={['dokter']}>
+            <RequireRole allowedRoles={['dokter', 'demo']}>
               <DokterPage />
             </RequireRole>
           }
@@ -135,7 +135,7 @@ function App() {
         <Route
           path="/dokter/riwayat"
           element={
-            <RequireRole allowedRoles={['dokter']}>
+            <RequireRole allowedRoles={['dokter', 'demo']}>
               <DokterPage />
             </RequireRole>
           }

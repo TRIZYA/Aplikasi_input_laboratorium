@@ -4,7 +4,7 @@ import { STORAGE_KEY, getRoleLandingPath } from '../../utils/auth'
 
 function LoginPage() {
   const navigate = useNavigate()
-  const [form, setForm] = useState({ username: 'admin2', password: 'admin123' })
+  const [form, setForm] = useState({ username: '', password: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -97,9 +97,7 @@ function LoginPage() {
         <div className="login-footer">
           <p>Demo akun:</p>
           <ul>
-            <li>admin2 / admin123</li>
-            <li>analis1 / analis123</li>
-            <li>dokter1 / dokter123</li>
+            <li>demo1 / demo123</li>
           </ul>
         </div>
       </div>

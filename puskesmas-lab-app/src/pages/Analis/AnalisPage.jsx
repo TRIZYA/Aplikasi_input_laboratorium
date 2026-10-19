@@ -52,6 +52,7 @@ function AnalisPage() {
   const auth = getStoredAuth()
   const token = auth?.token
   const currentUserId = auth?.user?.id
+  const isDemoUser = auth?.user?.role === 'demo'
 
   const [patients, setPatients] = useState([])
   const [categories, setCategories] = useState([])
@@ -341,6 +342,12 @@ function AnalisPage() {
       description="Input pemeriksaan dan simpan hasil dengan auto-flagging yang terintegrasi."
       accentClass="analis"
     >
+      {isDemoUser && (
+        <div className="error-box" style={{ marginBottom: '1rem' }}>
+          Akun demo hanya bisa membaca data. Anda tidak dapat menambah pasien, membuat order, atau menyimpan hasil laboratorium.
+        </div>
+      )}
+
       {isDashboard ? (
         <div className="panel-stack dashboard-summary">
           <section className="panel">
@@ -369,10 +376,12 @@ function AnalisPage() {
             <section className="panel">
               <div className="panel-header">
                 <h3>Manajemen Pasien</h3>
-                <button type="button" className="action-button primary" onClick={() => setPatientModalOpen(true)}>
-                  <span className="action-button__icon"><FiPlus /></span>
-                  <span>Tambah Pasien</span>
-                </button>
+                {!isDemoUser && (
+                  <button type="button" className="action-button primary" onClick={() => setPatientModalOpen(true)}>
+                    <span className="action-button__icon"><FiPlus /></span>
+                    <span>Tambah Pasien</span>
+                  </button>
+                )}
               </div>
 
               {error && <div className="error-box">{error}</div>}
@@ -448,12 +457,14 @@ function AnalisPage() {
                   <span>Prioritas / CITO</span>
                 </label>
 
-                <div className="action-row" style={{ gridColumn: '1 / -1' }}>
-                  <button type="submit" className="action-button primary">
-                    <span className="action-button__icon"><FiPlus /></span>
-                    <span>Buat Order</span>
-                  </button>
-                </div>
+                {!isDemoUser && (
+                  <div className="action-row" style={{ gridColumn: '1 / -1' }}>
+                    <button type="submit" className="action-button primary">
+                      <span className="action-button__icon"><FiPlus /></span>
+                      <span>Buat Order</span>
+                    </button>
+                  </div>
+                )}
               </form>
 
               <div className="table-scroll">
@@ -557,12 +568,14 @@ function AnalisPage() {
                     </table>
                   </div>
 
-                  <div className="action-row" style={{ marginTop: '1rem' }}>
-                    <button type="submit" className="action-button primary" disabled={savingResult}>
-                      <span className="action-button__icon"><FiCheck /></span>
-                      <span>{savingResult ? 'Menyimpan...' : 'Simpan Hasil'}</span>
-                    </button>
-                  </div>
+                  {!isDemoUser && (
+                    <div className="action-row" style={{ marginTop: '1rem' }}>
+                      <button type="submit" className="action-button primary" disabled={savingResult}>
+                        <span className="action-button__icon"><FiCheck /></span>
+                        <span>{savingResult ? 'Menyimpan...' : 'Simpan Hasil'}</span>
+                      </button>
+                    </div>
+                  )}
                 </form>
               ) : (
                 <div className="error-box">Belum ada parameter untuk pemeriksaan ini atau semua pemeriksaan sudah selesai.</div>

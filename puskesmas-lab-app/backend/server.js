@@ -26,6 +26,7 @@ const DEMO_USERS = [
   { username: 'admin2', password: 'admin123', role: 'admin', nama_lengkap: 'Admin Laboratorium' },
   { username: 'analis1', password: 'analis123', role: 'analis', nama_lengkap: 'Analis Laboratorium' },
   { username: 'dokter1', password: 'dokter123', role: 'dokter', nama_lengkap: 'Dokter Puskesmas' },
+  { username: 'demo1', password: 'demo123', role: 'demo', nama_lengkap: 'Demo Read Only' },
 ];
 
 const signToken = (user) => {
@@ -103,6 +104,16 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
+const denyDemoMutation = (req, res) => {
+  if (req.user?.role === 'demo') {
+    return res.status(403).json({
+      message: 'Akun demo hanya dapat melihat data, tidak dapat melakukan perubahan.',
+    });
+  }
+
+  return null;
+};
+
 const getPatientGender = async (pasienId) => {
   const result = await pool.query('SELECT jenis_kelamin FROM pasien WHERE id = $1', [pasienId]);
   if (result.rows.length === 0) {
@@ -153,6 +164,10 @@ app.post('/api/auth/register', async (req, res) => {
 
   if (!username || !password || !role || !nama_lengkap) {
     return res.status(400).json({ message: 'Semua field wajib diisi' });
+  }
+
+  if (String(role).toLowerCase() === 'demo') {
+    return res.status(403).json({ message: 'Role demo hanya dapat digunakan untuk akun read-only yang sudah dibuat secara terkelola.' });
   }
 
   try {
@@ -231,6 +246,9 @@ app.get('/api/users', authMiddleware, async (req, res) => {
 });
 
 app.put('/api/users/:id', authMiddleware, async (req, res) => {
+  const demoBlocked = denyDemoMutation(req, res);
+  if (demoBlocked) return demoBlocked;
+
   if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Akses ditolak. Hanya admin yang dapat mengubah user.' });
   }
@@ -267,6 +285,9 @@ app.put('/api/users/:id', authMiddleware, async (req, res) => {
 });
 
 app.delete('/api/users/:id', authMiddleware, async (req, res) => {
+  const demoBlocked = denyDemoMutation(req, res);
+  if (demoBlocked) return demoBlocked;
+
   if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Akses ditolak. Hanya admin yang dapat menghapus user.' });
   }
@@ -294,6 +315,9 @@ app.delete('/api/users/:id', authMiddleware, async (req, res) => {
 });
 
 app.post('/api/users/:id/reset-password', authMiddleware, async (req, res) => {
+  const demoBlocked = denyDemoMutation(req, res);
+  if (demoBlocked) return demoBlocked;
+
   if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Akses ditolak. Hanya admin yang dapat mereset password.' });
   }
@@ -350,6 +374,9 @@ app.get('/api/pasien/:id', authMiddleware, async (req, res) => {
 });
 
 app.post('/api/pasien', authMiddleware, async (req, res) => {
+  const demoBlocked = denyDemoMutation(req, res);
+  if (demoBlocked) return demoBlocked;
+
   const { nik, nama_pasien, tanggal_lahir, jenis_kelamin, alamat, no_hp } = req.body;
 
   if (!nik || !nama_pasien || !tanggal_lahir || !jenis_kelamin) {
@@ -375,6 +402,9 @@ app.post('/api/pasien', authMiddleware, async (req, res) => {
 });
 
 app.put('/api/pasien/:id', authMiddleware, async (req, res) => {
+  const demoBlocked = denyDemoMutation(req, res);
+  if (demoBlocked) return demoBlocked;
+
   const { id } = req.params;
   const { nik, nama_pasien, tanggal_lahir, jenis_kelamin, alamat, no_hp } = req.body;
 
@@ -411,6 +441,9 @@ app.put('/api/pasien/:id', authMiddleware, async (req, res) => {
 });
 
 app.delete('/api/pasien/:id', authMiddleware, async (req, res) => {
+  const demoBlocked = denyDemoMutation(req, res);
+  if (demoBlocked) return demoBlocked;
+
   const { id } = req.params;
 
   try {
@@ -439,6 +472,9 @@ app.get('/api/kategori-tes', authMiddleware, async (req, res) => {
 });
 
 app.post('/api/kategori-tes', authMiddleware, async (req, res) => {
+  const demoBlocked = denyDemoMutation(req, res);
+  if (demoBlocked) return demoBlocked;
+
   const { nama_kategori, deskripsi } = req.body;
 
   if (!nama_kategori) {
@@ -463,6 +499,9 @@ app.post('/api/kategori-tes', authMiddleware, async (req, res) => {
 });
 
 app.put('/api/kategori-tes/:id', authMiddleware, async (req, res) => {
+  const demoBlocked = denyDemoMutation(req, res);
+  if (demoBlocked) return demoBlocked;
+
   const { id } = req.params;
   const { nama_kategori, deskripsi } = req.body;
 
@@ -494,6 +533,9 @@ app.put('/api/kategori-tes/:id', authMiddleware, async (req, res) => {
 });
 
 app.delete('/api/kategori-tes/:id', authMiddleware, async (req, res) => {
+  const demoBlocked = denyDemoMutation(req, res);
+  if (demoBlocked) return demoBlocked;
+
   const { id } = req.params;
 
   try {
@@ -528,6 +570,9 @@ app.get('/api/kategori-tes/:id/parameter', authMiddleware, async (req, res) => {
 });
 
 app.post('/api/parameter-tes', authMiddleware, async (req, res) => {
+  const demoBlocked = denyDemoMutation(req, res);
+  if (demoBlocked) return demoBlocked;
+
   const {
     kategori_id,
     nama_parameter,
@@ -572,6 +617,9 @@ app.post('/api/parameter-tes', authMiddleware, async (req, res) => {
 });
 
 app.put('/api/parameter-tes/:id', authMiddleware, async (req, res) => {
+  const demoBlocked = denyDemoMutation(req, res);
+  if (demoBlocked) return demoBlocked;
+
   const { id } = req.params;
   const {
     kategori_id,
@@ -628,6 +676,9 @@ app.put('/api/parameter-tes/:id', authMiddleware, async (req, res) => {
 });
 
 app.delete('/api/parameter-tes/:id', authMiddleware, async (req, res) => {
+  const demoBlocked = denyDemoMutation(req, res);
+  if (demoBlocked) return demoBlocked;
+
   const { id } = req.params;
 
   try {
@@ -661,6 +712,9 @@ app.get('/api/master', authMiddleware, async (req, res) => {
 });
 
 app.post('/api/pemeriksaan', authMiddleware, async (req, res) => {
+  const demoBlocked = denyDemoMutation(req, res);
+  if (demoBlocked) return demoBlocked;
+
   const { pasien_id, dokter_perujuk, analis_id, is_cito, status, kategori_id } = req.body;
 
   if (!pasien_id || !analis_id) {
@@ -764,6 +818,9 @@ app.get('/api/pemeriksaan/:id', authMiddleware, async (req, res) => {
 });
 
 app.post('/api/pemeriksaan/:id/hasil', authMiddleware, async (req, res) => {
+  const demoBlocked = denyDemoMutation(req, res);
+  if (demoBlocked) return demoBlocked;
+
   const pemeriksaanId = Number(req.params.id);
   const { hasil } = req.body;
 
@@ -811,6 +868,9 @@ app.post('/api/pemeriksaan/:id/hasil', authMiddleware, async (req, res) => {
 });
 
 app.post('/api/pemeriksaan/:id/validasi', authMiddleware, async (req, res) => {
+  const demoBlocked = denyDemoMutation(req, res);
+  if (demoBlocked) return demoBlocked;
+
   const { validator_id, status, catatan_dokter } = req.body;
   const pemeriksaanId = Number(req.params.id);
 

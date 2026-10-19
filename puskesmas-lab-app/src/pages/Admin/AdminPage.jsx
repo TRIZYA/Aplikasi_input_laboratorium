@@ -64,6 +64,7 @@ function AdminPage() {
   const auth = getStoredAuth()
   const token = auth?.token
   const currentUserId = auth?.user?.id
+  const isDemoUser = auth?.user?.role === 'demo'
 
   const fetchAuthJson = async (url, options = {}) => {
     const auth = getStoredAuth()
@@ -462,6 +463,12 @@ function AdminPage() {
       description="Kelola pengguna, kategori tes, dan parameter referensi laboratorium."
       accentClass="admin"
     >
+      {isDemoUser && (
+        <div className="error-box" style={{ marginBottom: '1rem' }}>
+          Akun demo hanya bisa melihat data. Fitur tambah, edit, dan hapus tidak tersedia untuk role ini.
+        </div>
+      )}
+
       {isDashboard ? (
         <div className="panel-stack dashboard-summary">
           <section className="panel">
@@ -490,10 +497,12 @@ function AdminPage() {
             <section className="panel">
             <div className="panel-header">
               <h3>Manajemen Pengguna</h3>
-              <button className="action-button primary" type="button" onClick={openCreateUserModal}>
-                <span className="action-button__icon"><FiPlus /></span>
-                <span>Tambah User</span>
-              </button>
+              {!isDemoUser && (
+                <button className="action-button primary" type="button" onClick={openCreateUserModal}>
+                  <span className="action-button__icon"><FiPlus /></span>
+                  <span>Tambah User</span>
+                </button>
+              )}
             </div>
             <div className="table-scroll">
               <table className="data-table">
@@ -517,12 +526,16 @@ function AdminPage() {
                         <td>{row.nama}</td>
                         <td><span className={`badge role-${row.role.toLowerCase()}`}>{row.role}</span></td>
                         <td>
-                          <div className="action-cell">
-                            <button className="mini-button" type="button" onClick={() => openEditUserModal(row)} title="Edit user">
-                              <span className="action-button__icon"><FiEdit3 /></span>
-                              <span>Edit</span>
-                            </button>
-                          </div>
+                          {!isDemoUser ? (
+                            <div className="action-cell">
+                              <button className="mini-button" type="button" onClick={() => openEditUserModal(row)} title="Edit user">
+                                <span className="action-button__icon"><FiEdit3 /></span>
+                                <span>Edit</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="status-pill neutral">Read only</span>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -543,10 +556,12 @@ function AdminPage() {
                   <div className="panel">
                 <div className="panel-header">
                   <h3>Kategori Tes</h3>
-                  <button className="action-button primary" type="button" onClick={() => openCategoryModal()}>
-                    <span className="action-button__icon"><FiPlus /></span>
-                    <span>Tambah Kategori</span>
-                  </button>
+                  {!isDemoUser && (
+                    <button className="action-button primary" type="button" onClick={() => openCategoryModal()}>
+                      <span className="action-button__icon"><FiPlus /></span>
+                      <span>Tambah Kategori</span>
+                    </button>
+                  )}
                 </div>
 
                 {error && <div className="error-box">{error}</div>}
@@ -572,12 +587,16 @@ function AdminPage() {
                             <td>{row.nama_kategori}</td>
                             <td>{row.deskripsi || '-'}</td>
                             <td>
-                              <div className="action-cell">
-                                <button className="mini-button" type="button" onClick={() => openCategoryModal(row)} title="Edit kategori">
-                                  <span className="action-button__icon"><FiEdit3 /></span>
-                                  <span>Edit</span>
-                                </button>
-                              </div>
+                              {!isDemoUser ? (
+                                <div className="action-cell">
+                                  <button className="mini-button" type="button" onClick={() => openCategoryModal(row)} title="Edit kategori">
+                                    <span className="action-button__icon"><FiEdit3 /></span>
+                                    <span>Edit</span>
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="status-pill neutral">Read only</span>
+                              )}
                             </td>
                           </tr>
                         ))
@@ -594,10 +613,12 @@ function AdminPage() {
                   <div className="panel">
                 <div className="panel-header">
                   <h3>Parameter Tes</h3>
-                  <button className="action-button primary" type="button" onClick={() => openParameterModal()}>
-                    <span className="action-button__icon"><FiPlus /></span>
-                    <span>Tambah Parameter</span>
-                  </button>
+                  {!isDemoUser && (
+                    <button className="action-button primary" type="button" onClick={() => openParameterModal()}>
+                      <span className="action-button__icon"><FiPlus /></span>
+                      <span>Tambah Parameter</span>
+                    </button>
+                  )}
                 </div>
 
                 <div className="table-scroll">
@@ -624,12 +645,16 @@ function AdminPage() {
                             <td>{row.min_pria != null && row.max_pria != null ? `${row.min_pria}-${row.max_pria}` : '-'}</td>
                             <td>{row.min_wanita != null && row.max_wanita != null ? `${row.min_wanita}-${row.max_wanita}` : '-'}</td>
                             <td>
-                              <div className="action-cell">
-                                <button className="mini-button" type="button" onClick={() => openParameterModal(row)} title="Edit parameter">
-                                  <span className="action-button__icon"><FiEdit3 /></span>
-                                  <span>Edit</span>
-                                </button>
-                              </div>
+                              {!isDemoUser ? (
+                                <div className="action-cell">
+                                  <button className="mini-button" type="button" onClick={() => openParameterModal(row)} title="Edit parameter">
+                                    <span className="action-button__icon"><FiEdit3 /></span>
+                                    <span>Edit</span>
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="status-pill neutral">Read only</span>
+                              )}
                             </td>
                           </tr>
                         ))
@@ -669,6 +694,7 @@ function AdminPage() {
                   <option value="admin">Admin</option>
                   <option value="analis">Analis</option>
                   <option value="dokter">Dokter</option>
+                  <option value="demo">Demo</option>
                 </select>
               </label>
               <label className="field">

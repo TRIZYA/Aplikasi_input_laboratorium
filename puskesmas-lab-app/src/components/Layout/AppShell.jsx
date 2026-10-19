@@ -32,9 +32,22 @@ function AppShell({ role, title, children }) {
       { label: 'Validasi Hasil', path: '/dokter/validasi' },
       { label: 'Riwayat Pasien', path: '/dokter/riwayat' },
     ],
+    demo: [
+      { label: 'Dashboard', path: '/admin' },
+      { label: 'Manajemen User', path: '/admin/users' },
+      { label: 'Kategori Tes', path: '/admin/kategori' },
+      { label: 'Parameter Tes', path: '/admin/parameter' },
+      { label: 'Pasien', path: '/analis/pasien' },
+      { label: 'Order Pemeriksaan', path: '/analis/order' },
+      { label: 'Input Hasil', path: '/analis/hasil' },
+      { label: 'Validasi Hasil', path: '/dokter/validasi' },
+      { label: 'Riwayat Pasien', path: '/dokter/riwayat' },
+    ],
   }
 
   const currentUser = auth?.user || { username: 'User', role }
+  const displayRole = currentUser.role || role
+  const navItems = menuItems[displayRole] || menuItems[role] || []
   const isActiveLink = (path) => location.pathname === path || (path !== '/admin' && location.pathname.startsWith(path))
 
   return (
@@ -69,11 +82,11 @@ function AppShell({ role, title, children }) {
 
         <div className="user-chip">
           <span className="dot" />
-          {currentUser.role || role}
+          {displayRole}
         </div>
 
         <nav className="nav">
-          {menuItems[role].map((item) => (
+          {navItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
@@ -95,7 +108,7 @@ function AppShell({ role, title, children }) {
       <main className="content-area">
         <header className="topbar">
           <div>
-            <span className="role-badge">{role.toUpperCase()}</span>
+            <span className="role-badge">{displayRole.toUpperCase()}</span>
             <h2>{title}</h2>
           </div>
         </header>

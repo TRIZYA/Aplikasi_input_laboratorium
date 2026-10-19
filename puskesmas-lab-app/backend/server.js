@@ -5,23 +5,18 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
 const { Client, Pool } = require('pg');
+const { buildDatabaseConfig } = require('./dbConfig');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-const DB_NAME = process.env.DB_NAME || 'puskesmas_lab';
 const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT || 5432),
-  database: DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-});
+const databaseConfig = buildDatabaseConfig(process.env);
+const pool = new Pool(databaseConfig);
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -37,6 +32,9 @@ app.use(cors({
 app.use(express.json());
 
 const DEMO_USERS = [
+  { username: 'admin', password: 'admin123', role: 'admin', nama_lengkap: 'Admin Laboratorium' },
+  { username: 'analis', password: 'analis123', role: 'analis', nama_lengkap: 'Analis Laboratorium' },
+  { username: 'dokter', password: 'dokter123', role: 'dokter', nama_lengkap: 'Dokter Puskesmas' },
   { username: 'demo1', password: 'demo123', role: 'demo', nama_lengkap: 'Demo Read Only' },
 ];
 
@@ -69,6 +67,25 @@ const ensureDemoUsers = async () => {
     }
   } catch (error) {
     console.error('Demo users seeding failed:', error.message);
+  }
+};
+
+const ensureKnownAdmin = async () => {
+  try {
+    const result = await pool.query(
+      'SELECT id FROM users WHERE username = $1',
+      ['admin']
+    );
+
+    if (result.rows.length === 0) {
+      const passwordHash = await bcrypt.hash('admin123', 10);
+      await pool.query(
+        'INSERT INTO users (username, password_hash, role, nama_lengkap) VALUES ($1, $2, $3, $4)',
+        ['admin', passwordHash, 'admin', 'Admin Laboratorium']
+      );
+    }
+  } catch (error) {
+    console.warn('Known admin seeding skipped:', error.message);
   }
 };
 
@@ -924,6 +941,35 @@ app.use((req, res) => {
 });
 
 const ensureDatabaseReady = async () => {
+  const usePrismaUrl = Boolean(process.env.DATABASE_URL);
+
+  if (usePrismaUrl) {
+    const schemaClient = new Client({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: true },
+    });
+
+    try {
+      await schemaClient.connect();
+      const usersTableCheck = await schemaClient.query(
+        "SELECT to_regclass('public.users') AS table_name"
+      );
+
+      if (!usersTableCheck.rows[0]?.table_name) {
+        const schemaSql = fs.readFileSync(path.join(__dirname, 'init_db.sql'), 'utf8');
+        await schemaClient.query(schemaSql);
+        console.log('Schema initialized from Prisma DATABASE_URL.');
+      }
+    } catch (error) {
+      console.error('Schema initialization failed for Prisma DATABASE_URL:', error.message);
+      throw error;
+    } finally {
+      await schemaClient.end();
+    }
+
+    return;
+  }
+
   const adminClientConfig = {
     host: process.env.DB_HOST,
     port: Number(process.env.DB_PORT || 5432),
@@ -939,12 +985,12 @@ const ensureDatabaseReady = async () => {
 
     const databaseCheck = await rootClient.query(
       'SELECT 1 FROM pg_database WHERE datname = $1',
-      [DB_NAME]
+      [process.env.DB_NAME || 'puskesmas_lab']
     );
 
     if (databaseCheck.rowCount === 0) {
-      await rootClient.query(`CREATE DATABASE "${DB_NAME}"`);
-      console.log(`Database ${DB_NAME} created.`);
+      await rootClient.query(`CREATE DATABASE "${process.env.DB_NAME || 'puskesmas_lab'}"`);
+      console.log(`Database ${process.env.DB_NAME || 'puskesmas_lab'} created.`);
     }
   } catch (error) {
     console.error('Database bootstrap failed:', error.message);
@@ -956,7 +1002,7 @@ const ensureDatabaseReady = async () => {
   const schemaClient = new Client({
     host: process.env.DB_HOST,
     port: Number(process.env.DB_PORT || 5432),
-    database: DB_NAME,
+    database: process.env.DB_NAME || 'puskesmas_lab',
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
   });
@@ -970,7 +1016,7 @@ const ensureDatabaseReady = async () => {
     if (!usersTableCheck.rows[0]?.table_name) {
       const schemaSql = fs.readFileSync(path.join(__dirname, 'init_db.sql'), 'utf8');
       await schemaClient.query(schemaSql);
-      console.log(`Schema initialized for ${DB_NAME}.`);
+      console.log(`Schema initialized for ${process.env.DB_NAME || 'puskesmas_lab'}.`);
     }
   } catch (error) {
     console.error('Schema initialization failed:', error.message);
@@ -984,6 +1030,7 @@ const startServer = async () => {
   await ensureDatabaseReady();
   await ensureSchemaCompatibility();
   await ensureDemoUsers();
+  await ensureKnownAdmin();
 
   app.listen(PORT, () => {
     console.log(`Server backend running on http://localhost:${PORT}`);

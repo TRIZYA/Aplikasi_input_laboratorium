@@ -1037,14 +1037,14 @@ const startServer = async () => {
   });
 };
 
-module.exports = {
-  app,
-  startServer,
-  pool,
-  ensureDemoUsers,
-  ensureKnownAdmin,
-  ensureDatabaseReady,
-};
+module.exports = app;
+module.exports.default = app;
+module.exports.app = app;
+module.exports.startServer = startServer;
+module.exports.pool = pool;
+module.exports.ensureDemoUsers = ensureDemoUsers;
+module.exports.ensureKnownAdmin = ensureKnownAdmin;
+module.exports.ensureDatabaseReady = ensureDatabaseReady;
 
 if (require.main === module) {
   startServer();

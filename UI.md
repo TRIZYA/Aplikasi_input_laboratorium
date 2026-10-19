@@ -1,125 +1,193 @@
-# Panduan Lengkap UI/UX Frontend: Admin & Dokter
+# Panduan UI & Alur Pengguna Aplikasi Lab Puskesmas
 
-Dokumen ini menjelaskan struktur UI yang ideal untuk aplikasi lab puskesmas dan mencatat status implementasi yang sudah ada di project ini.
+Dokumen ini menjelaskan bagaimana UI seharusnya merepresentasikan alur kerja laboratorium nyata di puskesmas, bukan hanya CRUD master data. Fokus utama UI adalah membuat alur kerja pasien menjadi jelas, cepat dipahami, dan aman dari kesalahan input.
 
-## Status Implementasi Saat Ini
+## Prinsip desain utama
 
-Bagian yang sudah cukup matang:
-- Login page dan protected route.
-- Layout sidebar/topbar yang menyesuaikan role.
-- Dashboard admin, analis, dan dokter dasar.
-- Struktur folder modular yang sesuai arahan UI.
+1. UI harus memperlihatkan alur pasien dengan jelas.
+2. Data pelaporan harus mudah dibaca oleh dokter dan analis.
+3. Nilai abnormal harus langsung terlihat secara visual.
+4. Setiap halaman harus memberi konteks: pasien siapa, pemeriksaan apa, status apa, dan aksi apa yang berikutnya.
+5. Layout harus bersih, konsisten, dan berbasis data klinis, bukan sekadar form boilerplate.
 
-Bagian yang masih perlu ditingkatkan:
-- Form CRUD lengkap untuk user, kategori, dan parameter.
-- Data binding ke API live di seluruh modul.
-- UI untuk pdf report, loading/error, dan notifikasi.
-- Komponen reusable yang lebih konsisten untuk tabel, modal, dan form.
+## Status implementasi UI saat ini
 
----
+Sudah ada:
+- layout shell per role;
+- sidebar dan halaman dashboard admin/analis/dokter;
+- page pasien, order pemeriksaan, dan review hasil dasar;
+- modul CRUD admin untuk user/kategori/parameter;
+- status dan highlight abnormal untuk hasil lab.
 
-## 1. Antarmuka untuk ADMIN (Sistem & Master Data)
+Masih perlu ditingkatkan:
+- integrasi penuh ke API live untuk semua modul;
+- form pasien dan order pemeriksaan yang lebih lengkap secara klinis;
+- detail hasil lab yang lebih rapi untuk dokter;
+- notifikasi dan loading state yang lebih seragam;
+- export PDF laporan dan cetak hasil pemeriksaan.
 
-Admin berperan sebagai pengendali utama sistem dan data master.
+## 1. UI Admin
 
-### A. Dashboard Admin
-- Widget statistik: total pengguna, total pasien, total kategori aktif.
-- Log kegiatan terakhir (opsional).
+### Dashboard admin
+Tampilan dashboard admin harus fokus pada ringkasan operasional, misalnya:
+- total pengguna aktif;
+- total pasien terdaftar;
+- total kategori tes aktif;
+- total parameter aktif;
+- ringkasan status pemeriksaan hari ini.
 
-### B. Halaman Manajemen Pengguna
-- Tabel user: username, nama lengkap, role, tanggal dibuat.
-- Form modal buat/edit user.
-- Badge role: admin merah, analis biru, dokter hijau.
-- Tombol edit, hapus, reset password.
+Harus tampil sederhana dan bersih, tanpa menampilkan data operasional dari role lain.
 
-### C. Halaman Manajemen Kategori Tes
-- Tabel kategori.
-- Form tambah/edit kategori.
+### Manajemen pengguna
+UI untuk admin harus memiliki:
+- tabel user dengan username, nama lengkap, role, status, aksi;
+- tombol tambah user dan reset password;
+- modal edit user dengan validasi form;
+- tombol hapus dengan konfirmasi.
 
-### D. Halaman Manajemen Parameter Tes
-- Tabel parameter dengan kolom nama, kategori, satuan, nilai rujukan, min/max pria, min/max wanita.
-- Filter berdasarkan kategori.
-- Form tambah param yang dibuat jelas untuk pria dan wanita.
+### Manajemen kategori tes
+UI kategori tes harus menampilkan:
+- nama kategori;
+- deskripsi;
+- tombol tambah/edit/hapus dengan konfirmasi.
 
-### E. Pengaturan Instansi (Opsional)
-- Nama puskesmas, alamat, logo, dan format kop surat untuk laporan.
+### Manajemen parameter tes
+Parameter tes perlu layout yang rapi dan informatif:
+- nama parameter;
+- kategori;
+- satuan;
+- nilai rujukan;
+- rentang min/max pria dan wanita;
+- tombol edit/hapus.
 
----
+## 2. UI Analis
 
-## 2. Antarmuka untuk DOKTER (Validasi & Klinis)
+### Halaman pasien
+Halaman pasien harus memungkinkan analis untuk:
+- menambah pasien baru;
+- mencari pasien berdasarkan NIK atau nama;
+- melihat data dasar pasien;
+- menampilkan umur, jenis kelamin, tanggal lahir, alamat, no_hp.
 
-Dokter fokus pada pembacaan data dan keputusan klinis.
+### Halaman order pemeriksaan
+UI ini harus menampilkan:
+- pasien yang dipilih;
+- jenis pemeriksaan/lab yang diminta;
+- prioritas CITO atau reguler;
+- status pemeriksaan;
+- tombol buat order.
 
-### A. Dashboard Dokter
-- Banner dengan jumlah pemeriksaan yang menunggu validasi.
-- Grafik atau ringkasan statistik kunjungan.
+### Halaman input hasil lab
+Ini adalah area yang paling penting untuk realism. UI harus menampilkan:
+- tabel parameter yang relevan dari kategori tes tertentu;
+- kolom nilai hasil;
+- indikator status normal/abnormal;
+- catatan analis bila diperlukan;
+- tombol simpan dan kirim ke validasi dokter.
 
-### B. Halaman Antrean Validasi
-- Tabel pemeriksaan menunggu validasi.
-- Kolom: waktu daftar, nama pasien, jenis tes, analis, prioritas CITO.
-- Tombol untuk meninjau hasil.
+### Prinsip penting
+Analis tidak hanya mengisi angka. Mereka harus melihat konteks pasien, kategori tes, dan hasil yang sedang dikirim. UI harus memudahkan pemeriksaan yang cermat, bukan hanya mengisi form cepat.
 
-### C. Halaman Detail Tinjauan
-- Header pasien: nama, NIK, umur, jenis kelamin.
-- Tabel hasil lab read-only dengan highlight abnormal.
-- Textarea catatan klinis.
-- Tombol: Tolak/Revisi dan Validasi & Sahkan.
+## 3. UI Dokter
 
-### D. Halaman Riwayat Pasien
-- Pencarian berdasarkan nama atau NIK.
-- Kotak riwayat hasil sebelumnya untuk analisis tren pasien.
+### Dashboard dokter
+Dashboard dokter harus fokus pada:
+- jumlah pemeriksaan menunggu validasi;
+- status pemeriksaan berdasarkan prioritas;
+- jumlah hasil yang perlu direview.
 
----
+### Antrean validasi
+Tabel validasi harus memuat:
+- nama pasien;
+- tanggal/jenis pemeriksaan;
+- status pemeriksaan;
+- prioritas CITO;
+- tombol review.
 
-## 3. Struktur Komponen React yang Disarankan
+### Detail review hasil
+Halaman review harus menampilkan:
+- nama pasien, NIK, umur, jenis kelamin;
+- tabel hasil lab lengkap;
+- highlight abnormal secara visual;
+- textarea untuk catatan klinis dokter;
+- tombol validasi atau revisi.
 
-Struktur yang saat ini sudah mulai dijalankan adalah:
+### Riwayat pasien
+Halaman riwayat pasien harus memberi dokter gambaran historis:
+- hasil sebelumnya;
+- status sebelumnya;
+- catatan dokter terdahulu;
+- tren data untuk pendukung keputusan klinis.
+
+## 4. Flow UI yang disarankan untuk aplikasi yang masuk akal
+
+### Flow pasien ke hasil
+1. Cari atau buat pasien.
+2. Buat order pemeriksaan.
+3. Pilih kategori tes dan parameter yang relevan.
+4. Input hasil lab.
+5. Lihat status abnormal/normal.
+6. Dokter validasi dan menutup pemeriksaan.
+7. Rekam medis siap dijadikan laporan.
+
+### Flow lebih realistis untuk dokter
+- Dokter tidak langsung mengedit hasil lab.
+- Dokter hanya meninjau, memberi catatan, dan memvalidasi.
+- Jika ada revisi, sistem harus mengembalikan hasil ke analis untuk diperbaiki.
+
+## 5. Standar komponen UI yang disarankan
+
+Struktur komponen yang sudah mulai dibangun sebaiknya dipertahankan:
 
 ```text
 src/
 ├── components/
 │   ├── Layout/
 │   ├── UI/
+│   ├── Table/
+│   ├── Modal/
 │   └── StatusBadge/
 ├── pages/
 │   ├── Auth/
 │   ├── Admin/
-│   ├── Dokter/
 │   ├── Analis/
+│   ├── Dokter/
 │   └── Common/
 ├── utils/
 │   ├── auth.js
-│   └── api.js
+│   ├── api.js
+│   └── validation.js
 ├── App.jsx
 ├── App.css
 └── main.jsx
 ```
 
-## 4. Prinsip UI yang Harus Tetap Dipertahankan
+## 6. Prinsip visual yang harus dijaga
 
-- Jelas dan rapi untuk data lab.
-- Prioritaskan readability untuk dokter.
-- Gunakan highlight visual untuk abnormal value.
-- Pagi-hari dan timeline status harus mudah dibaca.
-- RBAC harus benar-benar dibatasi dengan route guard.
+- warna yang jelas untuk status: biru untuk proses, hijau untuk valid, merah untuk abnormal.
+- data table harus mudah dibaca dan bisa di-scroll jika banyak kolom.
+- modal CRUD harus konsisten di semua modul.
+- tombol aksi harus jelas: tambah, edit, hapus, reset password, validasi, review.
+- form yang panjang seperti parameter lab harus dibagi rapi per blok.
 
-## 5. Backlog UI Prioritas Selanjutnya
+## 7. Backlog UI prioritas berikutnya
 
 ### Prioritas P0
-- Real bind semua halaman ke API live.
-- Form CRUD admin benar-benar jadi.
-- Integrasi validasi dokter dengan backend.
+- integrasi semua halaman ke API live;
+- tampilan alur hasil lab yang benar-benar end-to-end;
+- validasi dan review dokter terhubung ke data pemeriksaan yang nyata.
 
 ### Prioritas P1
-- Notifikasi, toaster, dan loading spinner.
-- Pencarian dan filter lebih matang.
-- Detail pasien dan riwayat hasil lebih hidup.
+- toaster / notifikasi untuk aksi sukses atau gagal;
+- search/filter pada halaman pasien dan hasil pemeriksaan;
+- detail pasien yang lebih lengkap dan lebih rapi.
 
 ### Prioritas P2
-- Export PDF hasil lab.
-- Responsif untuk tablet dan laptop.
-- Pola form reusable dan konsisten.
+- export PDF hasil lab;
+- dashboard rekap harian/bulanan;
+- desain responsif untuk tablet dan layar kecil;
+- komponen reusable yang lebih umum untuk table, filter, dan form.
 
-## 6. Kesimpulan
+## 8. Kesimpulan
 
-UI yang sudah ada sudah cukup kuat sebagai fondasi untuk aplikasi lab puskesmas. Saat ini arah pengembangan terbaik adalah mengerjakan penghubung data ke backend, lalu menutup fitur finishing seperti PDF, log aktivitas, dan testing. Dengan cara ini progres bisa dicicil tanpa kehilangan fokus terhadap produk akhir.
+UI yang ada sudah cukup kuat untuk menjadi fondasi aplikasi lab puskesmas. Namun agar proyek ini benar-benar terasa sebagai sistem laboratorium yang masuk akal, UI harus selalu berdasar pada real workflow klinis: pasien → order → hasil → validasi → laporan. Tanpa itu, sistem hanya akan terasa seperti dashboard CRUD yang belum benar-benar berfungsi untuk kebutuhan laboratorium nyata.

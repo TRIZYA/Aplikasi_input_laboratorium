@@ -2,22 +2,31 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { Pool } = require('pg');
+const fs = require('fs');
+const path = require('path');
+const { Client, Pool } = require('pg');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const DB_NAME = process.env.DB_NAME || 'puskesmas_lab';
 
 const pool = new Pool({
   host: process.env.DB_HOST,
   port: Number(process.env.DB_PORT || 5432),
-  database: process.env.DB_NAME,
+  database: DB_NAME,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
 });
 
 app.use(cors());
 app.use(express.json());
+
+const DEMO_USERS = [
+  { username: 'admin2', password: 'admin123', role: 'admin', nama_lengkap: 'Admin Laboratorium' },
+  { username: 'analis1', password: 'analis123', role: 'analis', nama_lengkap: 'Analis Laboratorium' },
+  { username: 'dokter1', password: 'dokter123', role: 'dokter', nama_lengkap: 'Dokter Puskesmas' },
+];
 
 const signToken = (user) => {
   return jwt.sign(
@@ -30,6 +39,46 @@ const signToken = (user) => {
     process.env.JWT_SECRET || 'dev-secret',
     { expiresIn: '8h' }
   );
+};
+
+const ensureDemoUsers = async () => {
+  try {
+    for (const demoUser of DEMO_USERS) {
+      const passwordHash = await bcrypt.hash(demoUser.password, 10);
+      await pool.query(
+        `INSERT INTO users (username, password_hash, role, nama_lengkap)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (username) DO UPDATE SET
+           password_hash = EXCLUDED.password_hash,
+           role = EXCLUDED.role,
+           nama_lengkap = EXCLUDED.nama_lengkap`,
+        [demoUser.username, passwordHash, demoUser.role, demoUser.nama_lengkap]
+      );
+    }
+  } catch (error) {
+    console.error('Demo users seeding failed:', error.message);
+  }
+};
+
+const ensureSchemaCompatibility = async () => {
+  try {
+    const result = await pool.query(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'pemeriksaan'
+       AND column_name = 'kategori_id'`
+    );
+
+    if (result.rows.length === 0) {
+      await pool.query(
+        `ALTER TABLE pemeriksaan
+         ADD COLUMN kategori_id INTEGER REFERENCES kategori_tes(id) ON DELETE SET NULL;`
+      );
+      console.log('Added missing kategori_id column to pemeriksaan.');
+    }
+  } catch (error) {
+    console.warn('Schema compatibility check skipped:', error.message);
+  }
 };
 
 const authMiddleware = async (req, res, next) => {
@@ -132,7 +181,8 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 app.post('/api/auth/login', async (req, res) => {
-  const { username, password } = req.body;
+  const username = String(req.body?.username || '').trim();
+  const password = String(req.body?.password || '').trim();
 
   if (!username || !password) {
     return res.status(400).json({ message: 'Username dan password wajib diisi' });
@@ -166,6 +216,109 @@ app.post('/api/auth/login', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Login gagal', error: error.message });
+  }
+});
+
+app.get('/api/users', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, username, role, nama_lengkap, created_at FROM users ORDER BY id ASC'
+    );
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ message: 'Gagal memuat data user', error: error.message });
+  }
+});
+
+app.put('/api/users/:id', authMiddleware, async (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Akses ditolak. Hanya admin yang dapat mengubah user.' });
+  }
+
+  const { id } = req.params;
+  const { username, role, nama_lengkap } = req.body;
+
+  if (!username || !role || !nama_lengkap) {
+    return res.status(400).json({ message: 'username, role, dan nama_lengkap wajib diisi' });
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE users
+       SET username = $1,
+           role = $2,
+           nama_lengkap = $3
+       WHERE id = $4
+       RETURNING id, username, role, nama_lengkap, created_at`,
+      [username.trim(), role.trim(), nama_lengkap.trim(), id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User tidak ditemukan' });
+    }
+
+    res.json({ message: 'User berhasil diperbarui', data: result.rows[0] });
+  } catch (error) {
+    if (error.code === '23505') {
+      return res.status(409).json({ message: 'Username sudah digunakan' });
+    }
+    res.status(500).json({ message: 'Gagal memperbarui user', error: error.message });
+  }
+});
+
+app.delete('/api/users/:id', authMiddleware, async (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Akses ditolak. Hanya admin yang dapat menghapus user.' });
+  }
+
+  const { id } = req.params;
+
+  if (Number(id) === Number(req.user.id)) {
+    return res.status(400).json({ message: 'User yang sedang login tidak dapat dihapus sendiri' });
+  }
+
+  try {
+    const result = await pool.query(
+      'DELETE FROM users WHERE id = $1 RETURNING id, username, role, nama_lengkap',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User tidak ditemukan' });
+    }
+
+    res.json({ message: 'User berhasil dihapus', data: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ message: 'Gagal menghapus user', error: error.message });
+  }
+});
+
+app.post('/api/users/:id/reset-password', authMiddleware, async (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Akses ditolak. Hanya admin yang dapat mereset password.' });
+  }
+
+  const { id } = req.params;
+  const { new_password } = req.body;
+
+  if (!new_password || String(new_password).trim().length < 6) {
+    return res.status(400).json({ message: 'new_password minimal 6 karakter' });
+  }
+
+  try {
+    const passwordHash = await bcrypt.hash(String(new_password), 10);
+    const result = await pool.query(
+      'UPDATE users SET password_hash = $1 WHERE id = $2 RETURNING id, username, role, nama_lengkap',
+      [passwordHash, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User tidak ditemukan' });
+    }
+
+    res.json({ message: 'Password user berhasil direset', data: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ message: 'Gagal mereset password user', error: error.message });
   }
 });
 
@@ -309,6 +462,56 @@ app.post('/api/kategori-tes', authMiddleware, async (req, res) => {
   }
 });
 
+app.put('/api/kategori-tes/:id', authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const { nama_kategori, deskripsi } = req.body;
+
+  if (!nama_kategori) {
+    return res.status(400).json({ message: 'nama_kategori wajib diisi' });
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE kategori_tes
+       SET nama_kategori = $1,
+           deskripsi = $2
+       WHERE id = $3
+       RETURNING *`,
+      [nama_kategori.trim(), deskripsi !== undefined ? deskripsi.trim() : null, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Kategori tes tidak ditemukan' });
+    }
+
+    res.json({ message: 'Kategori tes berhasil diperbarui', data: result.rows[0] });
+  } catch (error) {
+    if (error.code === '23505') {
+      return res.status(409).json({ message: 'Nama kategori sudah ada' });
+    }
+    res.status(500).json({ message: 'Gagal memperbarui kategori tes', error: error.message });
+  }
+});
+
+app.delete('/api/kategori-tes/:id', authMiddleware, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query(
+      'DELETE FROM kategori_tes WHERE id = $1 RETURNING *',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Kategori tes tidak ditemukan' });
+    }
+
+    res.json({ message: 'Kategori tes berhasil dihapus', data: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ message: 'Gagal menghapus kategori tes', error: error.message });
+  }
+});
+
 app.get('/api/kategori-tes/:id/parameter', authMiddleware, async (req, res) => {
   const { id } = req.params;
 
@@ -368,6 +571,81 @@ app.post('/api/parameter-tes', authMiddleware, async (req, res) => {
   }
 });
 
+app.put('/api/parameter-tes/:id', authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const {
+    kategori_id,
+    nama_parameter,
+    satuan,
+    nilai_rujukan,
+    min_pria,
+    max_pria,
+    min_wanita,
+    max_wanita,
+  } = req.body;
+
+  if (!kategori_id || !nama_parameter) {
+    return res.status(400).json({ message: 'kategori_id dan nama_parameter wajib diisi' });
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE parameter_tes
+       SET kategori_id = $1,
+           nama_parameter = $2,
+           satuan = $3,
+           nilai_rujukan = $4,
+           min_pria = $5,
+           max_pria = $6,
+           min_wanita = $7,
+           max_wanita = $8
+       WHERE id = $9
+       RETURNING *`,
+      [
+        kategori_id,
+        nama_parameter.trim(),
+        satuan !== undefined ? satuan.trim() : null,
+        nilai_rujukan !== undefined ? nilai_rujukan.trim() : null,
+        min_pria ?? null,
+        max_pria ?? null,
+        min_wanita ?? null,
+        max_wanita ?? null,
+        id,
+      ]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Parameter tes tidak ditemukan' });
+    }
+
+    res.json({ message: 'Parameter tes berhasil diperbarui', data: result.rows[0] });
+  } catch (error) {
+    if (error.code === '23505') {
+      return res.status(409).json({ message: 'Parameter pada kategori tersebut sudah ada' });
+    }
+    res.status(500).json({ message: 'Gagal memperbarui parameter tes', error: error.message });
+  }
+});
+
+app.delete('/api/parameter-tes/:id', authMiddleware, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query(
+      'DELETE FROM parameter_tes WHERE id = $1 RETURNING *',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Parameter tes tidak ditemukan' });
+    }
+
+    res.json({ message: 'Parameter tes berhasil dihapus', data: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ message: 'Gagal menghapus parameter tes', error: error.message });
+  }
+});
+
 app.get('/api/master', authMiddleware, async (req, res) => {
   try {
     const kategoriResult = await pool.query('SELECT * FROM kategori_tes ORDER BY id ASC');
@@ -383,16 +661,20 @@ app.get('/api/master', authMiddleware, async (req, res) => {
 });
 
 app.post('/api/pemeriksaan', authMiddleware, async (req, res) => {
-  const { pasien_id, dokter_perujuk, analis_id, is_cito, status } = req.body;
+  const { pasien_id, dokter_perujuk, analis_id, is_cito, status, kategori_id } = req.body;
 
   if (!pasien_id || !analis_id) {
     return res.status(400).json({ message: 'pasien_id dan analis_id wajib diisi' });
   }
 
+  if (!kategori_id) {
+    return res.status(400).json({ message: 'kategori_id wajib diisi' });
+  }
+
   try {
     const result = await pool.query(
-      `INSERT INTO pemeriksaan (pasien_id, dokter_perujuk, is_cito, analis_id, validator_id, catatan_dokter, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO pemeriksaan (pasien_id, dokter_perujuk, is_cito, analis_id, validator_id, catatan_dokter, status, kategori_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
       [
         pasien_id,
@@ -402,6 +684,7 @@ app.post('/api/pemeriksaan', authMiddleware, async (req, res) => {
         null,
         null,
         status || 'menunggu',
+        Number(kategori_id),
       ]
     );
 
@@ -415,10 +698,11 @@ app.get('/api/pemeriksaan', authMiddleware, async (req, res) => {
   try {
     const { status, pasien_id } = req.query;
     let query = `
-      SELECT p.*, pas.nama_pasien, pas.nik, u.username AS analis_username
+      SELECT p.*, pas.nama_pasien, pas.nik, u.username AS analis_username, kt.nama_kategori
       FROM pemeriksaan p
       LEFT JOIN pasien pas ON pas.id = p.pasien_id
       LEFT JOIN users u ON u.id = p.analis_id
+      LEFT JOIN kategori_tes kt ON kt.id = p.kategori_id
     `;
     const values = [];
 
@@ -546,11 +830,11 @@ app.post('/api/pemeriksaan/:id/validasi', authMiddleware, async (req, res) => {
 
     const result = await pool.query(
       `UPDATE pemeriksaan
-       SET validator_id = $1,
+       SET validator_id = $1::integer,
            catatan_dokter = $2,
-           status = $3,
-           waktu_selesai = CASE WHEN $3 = 'selesai' THEN NOW() ELSE NULL END
-       WHERE id = $4
+           status = $3::varchar,
+           waktu_selesai = CASE WHEN $3::varchar = 'selesai' THEN NOW() ELSE NULL END
+       WHERE id = $4::integer
        RETURNING *`,
       [validator_id, catatan_dokter || null, status, pemeriksaanId]
     );
@@ -568,6 +852,71 @@ app.use((req, res) => {
   res.status(404).json({ message: 'Endpoint tidak ditemukan' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server backend running on http://localhost:${PORT}`);
-});
+const ensureDatabaseReady = async () => {
+  const adminClientConfig = {
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT || 5432),
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: 'postgres',
+  };
+
+  const rootClient = new Client(adminClientConfig);
+
+  try {
+    await rootClient.connect();
+
+    const databaseCheck = await rootClient.query(
+      'SELECT 1 FROM pg_database WHERE datname = $1',
+      [DB_NAME]
+    );
+
+    if (databaseCheck.rowCount === 0) {
+      await rootClient.query(`CREATE DATABASE "${DB_NAME}"`);
+      console.log(`Database ${DB_NAME} created.`);
+    }
+  } catch (error) {
+    console.error('Database bootstrap failed:', error.message);
+    throw error;
+  } finally {
+    await rootClient.end();
+  }
+
+  const schemaClient = new Client({
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT || 5432),
+    database: DB_NAME,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+  });
+
+  try {
+    await schemaClient.connect();
+    const usersTableCheck = await schemaClient.query(
+      "SELECT to_regclass('public.users') AS table_name"
+    );
+
+    if (!usersTableCheck.rows[0]?.table_name) {
+      const schemaSql = fs.readFileSync(path.join(__dirname, 'init_db.sql'), 'utf8');
+      await schemaClient.query(schemaSql);
+      console.log(`Schema initialized for ${DB_NAME}.`);
+    }
+  } catch (error) {
+    console.error('Schema initialization failed:', error.message);
+    throw error;
+  } finally {
+    await schemaClient.end();
+  }
+};
+
+const startServer = async () => {
+  await ensureDatabaseReady();
+  await ensureSchemaCompatibility();
+  await ensureDemoUsers();
+
+  app.listen(PORT, () => {
+    console.log(`Server backend running on http://localhost:${PORT}`);
+  });
+};
+
+startServer();

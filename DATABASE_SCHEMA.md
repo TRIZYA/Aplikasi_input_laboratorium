@@ -1,147 +1,171 @@
-# 🗄️ Skema Database (PostgreSQL) - Sistem Lab Puskesmas
+# Skema Database PostgreSQL - Sistem Lab Puskesmas
 
-Dokumen ini berisi struktur tabel relasional utama untuk database `puskesmas_lab` dan catatan mengenai skema yang sudah terimplementasi serta gap yang masih perlu ditambah untuk operasional nyata.
+Dokumen ini menggambarkan struktur data utama aplikasi lab puskesmas agar alur kerja pasien dan laboratorium terasa masuk akal. Fokus utama skema ini adalah membedakan dengan jelas antara data master, data pasien, data order pemeriksaan, hasil lab, validasi dokter, dan laporan akhir.
 
-## 1. Tabel `users` (Pengguna Aplikasi)
-Menyimpan data petugas yang memiliki akses ke dalam sistem (Admin, Analis, Dokter).
+## 1. Tabel `users`
+Tabel ini menyimpan data petugas yang memiliki akses ke sistem, seperti admin, analis, dan dokter.
 
-| Kolom | Tipe Data | Keterangan |
+| Kolom | Tipe | Keterangan |
 | :--- | :--- | :--- |
-| `id` | SERIAL / BIGINT | Primary Key |
-| `username` | VARCHAR(50) | Unik, digunakan untuk login |
-| `password_hash` | VARCHAR(255) | Password yang sudah dienkripsi bcrypt |
+| `id` | SERIAL / BIGINT | Primary key |
+| `username` | VARCHAR(50) | Login username, unik |
+| `password_hash` | VARCHAR(255) | Password terenkripsi bcrypt |
 | `role` | VARCHAR(20) | `admin`, `analis`, `dokter` |
-| `nama_lengkap` | VARCHAR(100) | Nama asli petugas |
+| `nama_lengkap` | VARCHAR(100) | Nama petugas |
 | `created_at` | TIMESTAMP | Waktu pembuatan akun |
 
-Catatan implementasi:
-- Pada aplikasi yang sedang dibangun, field `nama_lengkap` dan `created_at` sudah dipakai.
-- Ada kebutuhan tambahan yang disarankan untuk produksi: `is_active`, `last_login`, `updated_at`.
+Catatan:
+- `username` harus unik.
+- `role` harus dipastikan konsisten agar akses sesuai RBAC.
+- Disarankan menambahkan `is_active`, `last_login`, dan `updated_at` untuk operasional nyata.
 
-## 2. Tabel `pasien` (Data Pasien)
-Menyimpan identitas rekam medis pasien.
+## 2. Tabel `pasien`
+Tabel ini menyimpan identitas pasien yang akan menjadi subjek pemeriksaan laboratorium.
 
-| Kolom | Tipe Data | Keterangan |
+| Kolom | Tipe | Keterangan |
 | :--- | :--- | :--- |
-| `id` | SERIAL / BIGINT | Primary Key |
-| `nik` | VARCHAR(16) | Unik, NIK pasien |
+| `id` | SERIAL / BIGINT | Primary key |
+| `nik` | VARCHAR(16) | NIK pasien, unik |
 | `nama_pasien` | VARCHAR(100) | Nama lengkap pasien |
 | `tanggal_lahir` | DATE | Digunakan untuk menghitung umur |
 | `jenis_kelamin` | VARCHAR(1) | `L` atau `P` |
-| `alamat` | TEXT | Alamat domisili |
-| `no_hp` | VARCHAR(15) | Nullable |
-| `created_at` | TIMESTAMP | Waktu pasien didaftarkan |
+| `alamat` | TEXT | Alamat pasien |
+| `no_hp` | VARCHAR(20) | Nomor telepon, nullable |
+| `created_at` | TIMESTAMP | Waktu pendaftaran pasien |
 
-## 3. Tabel `kategori_tes` (Master Kategori)
-Mengelompokkan jenis tes laboratorium.
+Catatan:
+- `nik` harus unik untuk mencegah duplikasi pasien.
+- Data pasien ini harus dipisahkan dari data pemeriksaan agar riwayat pasien bisa ditelusuri.
 
-| Kolom | Tipe Data | Keterangan |
+## 3. Tabel `kategori_tes`
+Tabel ini berisi kelompok jenis pemeriksaan laboratorium, misalnya hematologi, kimia klinik, urinalisis.
+
+| Kolom | Tipe | Keterangan |
 | :--- | :--- | :--- |
-| `id` | SERIAL / BIGINT | Primary Key |
-| `nama_kategori` | VARCHAR(100) | Contoh: Hematologi, Kimia Klinik |
-| `deskripsi` | TEXT | Keterangan optional |
+| `id` | SERIAL / BIGINT | Primary key |
+| `nama_kategori` | VARCHAR(100) | Nama kategori tes |
+| `deskripsi` | TEXT | Penjelasan kategori, nullable |
 
-## 4. Tabel `parameter_tes` (Master Parameter & Nilai Rujukan)
-Menyimpan detail item tes dan batas normal untuk auto-flagging.
+## 4. Tabel `parameter_tes`
+Tabel ini menyimpan parameter yang dipakai dalam tes lab serta nilai rujukan berdasarkan jenis kelamin.
 
-| Kolom | Tipe Data | Keterangan |
+| Kolom | Tipe | Keterangan |
 | :--- | :--- | :--- |
-| `id` | SERIAL / BIGINT | Primary Key |
-| `kategori_id` | INT / BIGINT | Foreign Key -> `kategori_tes.id` |
-| `nama_parameter` | VARCHAR(100) | Nama parameter |
-| `satuan` | VARCHAR(20) | Misal: `g/dL`, `mg/dL` |
-| `nilai_rujukan` | VARCHAR(100) | Teks rujukan untuk laporan |
-| `min_pria` | FLOAT | Nilai minimum laki-laki |
-| `max_pria` | FLOAT | Nilai maksimum laki-laki |
-| `min_wanita` | FLOAT | Nilai minimum perempuan |
-| `max_wanita` | FLOAT | Nilai maksimum perempuan |
+| `id` | SERIAL / BIGINT | Primary key |
+| `kategori_id` | INT / BIGINT | FK ke `kategori_tes.id` |
+| `nama_parameter` | VARCHAR(100) | Nama parameter tes |
+| `satuan` | VARCHAR(20) | Contoh: `g/dL`, `mg/dL`, `cells/uL` |
+| `nilai_rujukan` | VARCHAR(100) | Teks referensi rujukan |
+| `min_pria` | FLOAT | Nilai minimum pasien laki-laki |
+| `max_pria` | FLOAT | Nilai maksimum pasien laki-laki |
+| `min_wanita` | FLOAT | Nilai minimum pasien perempuan |
+| `max_wanita` | FLOAT | Nilai maksimum pasien perempuan |
 
-## 5. Tabel `pemeriksaan` (Transaksi Lab / Order)
-Mencatat kunjungan pasien dan status pemeriksaan laboratorium.
+Catatan:
+- Parameter harus selalu terkait ke kategori tertentu.
+- Jika nilai hasil berada di luar limit berdasarkan jenis kelamin pasien, maka hasil tersebut dianggap abnormal.
 
-| Kolom | Tipe Data | Keterangan |
+## 5. Tabel `pemeriksaan`
+Tabel ini mewakili order pemeriksaan pasien dan status prosesnya.
+
+| Kolom | Tipe | Keterangan |
 | :--- | :--- | :--- |
-| `id` | SERIAL / BIGINT | Primary Key |
-| `pasien_id` | INT / BIGINT | Foreign Key -> `pasien.id` |
-| `dokter_perujuk` | VARCHAR(100) | Dokter rujukan atau poli |
-| `is_cito` | BOOLEAN | Prioritas tinggi |
-| `analis_id` | INT / BIGINT | Foreign Key -> `users.id` |
-| `validator_id` | INT / BIGINT | Foreign Key -> `users.id` |
+| `id` | SERIAL / BIGINT | Primary key |
+| `pasien_id` | INT / BIGINT | FK ke `pasien.id` |
+| `dokter_perujuk` | VARCHAR(100) | Nama dokter atau poli rujukan |
+| `is_cito` | BOOLEAN | Prioritas tinggi / urgent |
+| `analis_id` | INT / BIGINT | FK ke `users.id` yang menginput hasil |
+| `validator_id` | INT / BIGINT | FK ke `users.id` yang validasi dokter |
 | `catatan_dokter` | TEXT | Catatan klinis dari dokter |
-| `status` | VARCHAR(20) | `menunggu`, `proses`, `menunggu_validasi`, `revisi`, `selesai` |
-| `waktu_daftar` | TIMESTAMP | Waktu ekspedisi order dibuat |
-| `waktu_selesai` | TIMESTAMP | Waktu hasil diselesaikan |
+| `status` | VARCHAR(30) | `menunggu`, `proses`, `menunggu_validasi`, `revisi`, `selesai` |
+| `waktu_daftar` | TIMESTAMP | Waktu order dibuat |
+| `waktu_selesai` | TIMESTAMP | Waktu validasi final atau selesai |
 
-## 6. Tabel `detail_hasil` (Nilai Hasil Lab Pasien)
-Menyimpan angka/hasil riil dari setiap parameter tes.
+Catatan:
+- Status harus dipakai secara konsisten agar alur kerja laboratorium terdokumentasi dengan benar.
+- `is_cito` sangat penting untuk prioritas pemeriksaan.
 
-| Kolom | Tipe Data | Keterangan |
+## 6. Tabel `detail_hasil`
+Tabel ini menyimpan hasil pemeriksaan tiap parameter untuk tiap pemeriksaan pasien.
+
+| Kolom | Tipe | Keterangan |
 | :--- | :--- | :--- |
-| `id` | SERIAL / BIGINT | Primary Key |
-| `pemeriksaan_id` | INT / BIGINT | Foreign Key -> `pemeriksaan.id` |
-| `parameter_id` | INT / BIGINT | Foreign Key -> `parameter_tes.id` |
-| `nilai_hasil` | VARCHAR(50) | Bisa angka atau string seperti `Positif` |
-| `is_abnormal` | BOOLEAN | `TRUE` jika di luar batas normal |
-| `catatan` | TEXT | Catatan analis optional |
+| `id` | SERIAL / BIGINT | Primary key |
+| `pemeriksaan_id` | INT / BIGINT | FK ke `pemeriksaan.id` |
+| `parameter_id` | INT / BIGINT | FK ke `parameter_tes.id` |
+| `nilai_hasil` | VARCHAR(100) | Nilai hasil, dapat berupa angka atau teks |
+| `is_abnormal` | BOOLEAN | Menandai hasil di luar batas rujukan |
+| `catatan` | TEXT | Catatan analis atau keterangan tambahan |
 
----
+Catatan:
+- `detail_hasil` adalah fondasi rekam medis lab.
+- Setiap variabel hasil harus selalu terhubung ke pemeriksaan yang benar dan parameter yang benar.
 
-## 🔗 Panduan Relasi (Alur Kerja Data)
-1. Pasien didaftarkan ke tabel `pasien`.
-2. Pemeriksaan dibuat di `pemeriksaan` dan terhubung ke pasien serta analis.
-3. Parameter yang dipakai diambil dari `kategori_tes` dan `parameter_tes`.
-4. Setiap nilai hasil disimpan di `detail_hasil`.
-5. Backend mengecek nilai hasil terhadap `min/max` parameter dan menandai `is_abnormal`.
-6. Dokter melakukan validasi dan mengubah status pemeriksaan menjadi `selesai` atau `revisi`.
+## 7. Hubungan antar tabel
 
-## ✅ Status Skema Saat Ini
+Skema ini mendukung alur kerja yang masuk akal seperti ini:
 
-Skema inti yang diperlukan untuk alur lab puskesmas sudah ada. Struktur ini sudah dapat mendukung:
-- login dan user role,
-- rekam pasien,
-- pengelolaan kategori tes,
-- pengelolaan parameter tes,
-- order lab,
-- hasil lab,
-- validasi klinis,
-- auto-flagging.
+1. `pasien` → `pemeriksaan`
+2. `users` (analis) → `pemeriksaan`
+3. `kategori_tes` → `parameter_tes`
+4. `parameter_tes` → `detail_hasil`
+5. `pemeriksaan` → `detail_hasil`
+6. `users` (dokter) → validasi hasil pada `pemeriksaan`
 
-## ⚠️ Rekomendasi Penambahan Skema untuk Produksi
+Dengan struktur ini, sistem dapat melacak:
+- pasien mana yang mendapat pemeriksaan;
+- siapa analis yang input hasil;
+- parameter apa yang paling relevan;
+- hasil mana yang abnormal;
+- dokter mana yang memvalidasi;
+- apakah hasil final diterima atau direvisi.
 
-Untuk menggantikan sistem manual menjadi sistem operasional yang lebih kuat, disarankan menambahkan tabel berikut:
+## 8. Status skema saat ini
 
-### A. `log_aktivitas`
-| Kolom | Keterangan |
-| :--- | :--- |
-| `id` | Primary Key |
-| `user_id` | User yang melakukan aksi |
-| `aksi` | login, tambah_pasien, validasi, edit_parameter |
-| `waktu` | Timestamp |
-| `detail` | Deskripsi aktivitas |
+Skema inti yang sudah ada dapat mendukung alur puskesmas yang realistis, yaitu:
+- registrasi pasien;
+- order pemeriksaan;
+- input hasil lab;
+- auto-flagging abnormal;
+- validasi dokter;
+- rekam medis dasar.
 
-### B. `laporan_pdf` (optional)
-| Kolom | Keterangan |
-| :--- | :--- |
-| `id` | Primary Key |
-| `pemeriksaan_id` | Referensi ke pemeriksaan |
-| `file_path` | Lokasi file PDF |
-| `created_at` | Waktu pembuatan PDF |
+## 9. Rekomendasi penambahan untuk produksi
 
-### C. `setting_instansi` (optional)
-| Kolom | Keterangan |
-| :--- | :--- |
-| `id` | Primary Key |
-| `nama_puskesmas` | Nama instansi |
-| `alamat` | Alamat kantor |
-| `telepon` | Nomor kontak |
-| `kop_logo` | Path logo |
+Untuk membuat aplikasi ini benar-benar siap operasional, disarankan menambahkan tabel-tabel berikut:
 
-## 🧩 Catatan Perbaikan Database
+### `log_aktivitas`
+| Kolom | Tipe | Keterangan |
+| :--- | :--- | :--- |
+| `id` | SERIAL | Primary key |
+| `user_id` | BIGINT | FK ke `users.id` |
+| `aksi` | VARCHAR(100) | Contoh: login, tambah_pasien, validasi_hasil |
+| `waktu` | TIMESTAMP | Waktu aksi |
+| `detail` | TEXT | Detail perubahan atau aktivitas |
 
-- Pastikan semua foreign key diberi index agar query cepat.
-- Tambahkan `UNIQUE(username)` di tabel `users`.
-- Tambahkan `UNIQUE(nik)` di tabel `pasien`.
-- Tambahkan kolom `updated_at` pada tabel yang sering diubah.
-- Biasakan untuk menyimpan status dengan enum yang konsisten menggunakan check constraint di PostgreSQL.
+### `laporan_pdf`
+| Kolom | Tipe | Keterangan |
+| :--- | :--- | :--- |
+| `id` | SERIAL | Primary key |
+| `pemeriksaan_id` | BIGINT | FK ke `pemeriksaan.id` |
+| `file_path` | TEXT | Lokasi file hasil PDF |
+| `created_at` | TIMESTAMP | Waktu laporan dibuat |
 
-Skema ini masih bisa dikembangkan lebih lanjut sesuai kebutuhan operasional rumah sakit / puskesmas yang lebih lengkap.
+### `setting_instansi`
+| Kolom | Tipe | Keterangan |
+| :--- | :--- | :--- |
+| `id` | SERIAL | Primary key |
+| `nama_puskesmas` | VARCHAR(150) | Nama puskesmas |
+| `alamat` | TEXT | Alamat instansi |
+| `telepon` | VARCHAR(50) | Nomor kontak |
+| `logo_path` | TEXT | Lokasi logo |
+
+## 10. Catatan penting untuk pengembangan lanjutan
+
+- pastikan semua foreign key diberi index untuk performa.
+- gunakan `UNIQUE` untuk `username` dan `nik`.
+- tambahkan `updated_at` untuk tabel yang sering berubah.
+- pertimbangkan `CHECK` constraint untuk status dan role agar konsisten.
+- buat log aktivitas untuk kebutuhan audit dan keamanan.
+
+Dengan skema seperti ini, aplikasi tidak hanya “mampu mengelola data”, tetapi juga benar-benar mencerminkan alur laboratorium pasien yang masuk akal untuk layanan kesehatan. 

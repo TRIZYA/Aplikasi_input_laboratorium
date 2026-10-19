@@ -12,4 +12,5 @@ function UnauthorizedPage() {
   )
 }
 
+export { UnauthorizedPage }
 export default UnauthorizedPage

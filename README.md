@@ -1,99 +1,118 @@
 # Aplikasi Web Data Pasien Laboratorium Puskesmas
 
-## 📖 Deskripsi Proyek
+## Deskripsi proyek
 
-Aplikasi berbasis web ini dirancang untuk mendigitalisasi proses input, penyimpanan, dan pengelolaan data pasien serta hasil pemeriksaan laboratorium di lingkungan Puskesmas. Tujuannya adalah menggantikan pencatatan manual, meminimalkan kesalahan data, dan mempercepat proses pengecekan rekam medis, validasi hasil, serta laporan lab.
+Aplikasi ini dirancang untuk mendigitalisasi proses registrasi pasien, order pemeriksaan laboratorium, input hasil lab, validasi dokter, dan penyimpanan rekam medis di lingkungan Puskesmas. Fokus utamanya adalah membangun sistem yang masuk akal untuk dunia pelayanan kesehatan: pasien datang, data diinput dengan benar, hasil pemeriksaan diproses, dan hasil akhirnya siap ditinjau oleh dokter serta dilaporkan secara tertulis.
 
-## ✅ Status Implementasi Saat Ini
+Tujuan utama proyek ini adalah:
 
-Proyek ini sudah masuk ke tahap prototype / MVP yang cukup layak untuk demo fungsional. Saat ini, area yang sudah berjalan dengan baik adalah:
+- mengganti pencatatan manual yang rawan error;
+- menjaga konsistensi data pasien dan hasil pemeriksaan;
+- mempercepat validasi hasil oleh dokter;
+- menyediakan arsitektur yang bisa dikembangkan menjadi sistem operasional nyata.
 
-- Database PostgreSQL dan skema inti sudah siap.
-- Backend Express berfungsi untuk login, autentikasi JWT, pasien, master data, pemeriksaan, dan validasi.
-- Frontend React + Vite sudah memiliki layout modular, RBAC, dan halaman role-based.
-- Fitur auto-flagging untuk hasil lab sudah diimplementasikan di backend.
+## Status implementasi saat ini
 
-Area yang masih perlu dikerjakan untuk menjadi sistem yang lebih siap operasional:
+Proyek ini sudah masuk ke tahap prototype / MVP yang cukup kuat untuk demo dan pengembangan lanjutan. Beberapa area yang sudah berjalan antara lain:
 
-- CRUD lengkap untuk admin (user, kategori tes, parameter tes).
-- Integrasi penuh frontend ke API live di semua modul.
-- Fitur export PDF rekam medis.
-- Testing end-to-end dan validasi keseluruhan.
-- Deployment / hosting server lokal.
+- database PostgreSQL dan skema inti sudah dibuat;
+- backend Express sudah siap untuk auth, CRUD master, pasien, pemeriksaan, dan hasil lab;
+- frontend React + Vite sudah punya layout per role dan routing berdasarkan hak akses;
+- form admin untuk user, kategori tes, dan parameter tes sudah dibuat;
+- auto-flagging abnormal pada hasil lab sudah diterapkan;
+- login demo untuk admin, analis, dan dokter sudah berfungsi.
 
-## 🎯 Latar Belakang & Tujuan
+Area yang masih memerlukan penyelesaian agar lebih realistis dan siap operasional:
 
-- Masalah utama: pencatatan hasil lab manual rawan hilang, tidak konsisten, dan lambat saat mencari riwayat pasien.
-- Tujuan: menyediakan sistem database terpusat yang aman, cepat, dan mudah digunakan oleh petugas laboratorium dan dokter.
+- integrasi data real-time sedalam mungkin di seluruh role;
+- UI dan workflow pasien/lab yang lebih matang dan konsisten;
+- audit log dan riwayat perubahan data;
+- export PDF rekam medis dan laporan;
+- testing end-to-end dan deployment lokal.
 
-## 👥 Target Pengguna
+## Latar belakang dan kebutuhan bisnis
 
-1. Petugas Laboratorium / Analis
-   - Mendaftar pasien.
-   - Menginput hasil tes.
-   - Mengelola order pemeriksaan.
+Di layanan puskesmas, proses laboratorium umumnya melibatkan beberapa tahapan penting:
 
-2. Dokter / Penanggung Jawab Lab
-   - Meninjau hasil pemeriksaan.
-   - Menulis catatan dokter.
-   - Melakukan validasi & approval.
+1. pasien datang / mendaftar;
+2. petugas mengelola order pemeriksaan;
+3. analisis menginput hasil laboratorium;
+4. dokter meninjau hasil dan menulis catatan klinis;
+5. hasil final dibukukan dalam rekam medis atau laporan laboratorium.
 
-3. Admin Puskesmas
-   - Mengelola data user.
-   - Mengelola master kategori tes dan parameter.
-   - Mengawasi data dasar sistem.
+Tanpa alur seperti itu, aplikasi berisiko menjadi sekadar CRUD master data yang tidak mencerminkan kebutuhan nyata layanan rumah sakit/puskesmas.
 
-## ✨ Fitur Yang Sudah Ada
+## Pengguna utama
 
-### 1. Manajemen Akses & Keamanan
-- Sistem login/logout berbasis JWT.
-- Role-based access control (RBAC).
-- Pengguna dibagi menjadi `admin`, `analis`, dan `dokter`.
+### 1. Admin Puskesmas
+- mengelola pengguna sistem;
+- mengelola kategori tes;
+- mengelola parameter tes dan rentang normal;
+- menjaga integritas data master.
 
-### 2. Dashboard & Layout
-- Layout sidebar dan topbar dinamis sesuai role.
-- Halaman login, dashboard admin, analis, dan dokter sudah dibuat.
+### 2. Analis Laboratorium
+- melakukan registrasi pasien;
+- membuat order pemeriksaan;
+- memasukkan hasil pemeriksaan;
+- memastikan data hasil sesuai rentang rujukan.
 
-### 3. Data Master
-- Master data kategori tes.
-- Master data parameter tes.
-- Nilai rujukan dan auto-flagging berdasarkan gender.
+### 3. Dokter
+- meninjau hasil pemeriksaan;
+- menulis catatan klinis;
+- menyetujui atau menolak hasil validasi;
+- melihat riwayat pasien dan hasil sebelumnya.
 
-### 4. Manajemen Pasien
-- CRUD dasar pasien selesai di backend.
-- Form pasien dan list pasien ada di frontend.
+## Fitur yang sudah ada
 
-### 5. Transaksi Laboratorium
-- Order pemeriksaan dibuat.
-- Input hasil lab diterima dan disimpan.
-- Auto-flagging abnormal berdasarkan rentang min/max.
+### Manajemen akses & keamanan
+- login/logout berbasis JWT;
+- role-based access control;
+- pembagian akses admin, analis, dokter;
+- keamanan password dengan bcrypt.
 
-### 6. Validasi Dokter
-- Status pemeriksaan dapat masuk ke fase review dan validasi.
-- Catatan dokter dapat diisi.
-- Status dapat berubah menjadi `selesai` atau `revisi`.
+### Data master
+- kategori tes;
+- parameter tes;
+- nilai rujukan per gender untuk auto-flagging juga bisa dipakai untuk pengambil keputusan klinis.
 
-## ⚠️ Fitur Yang Masih Perlu Dilengkapi
+### Data pasien
+- registrasi pasien;
+- pencarian dasar pasien berdasarkan NIK/nama;
+- penyimpanan tanggal lahir dan jenis kelamin untuk penghitungan age-based logic.
 
-- CRUD lengkap untuk user, kategori tes, dan parameter tes.
-- Integrasi API live untuk seluruh form frontend.
-- PDF rekam medis / hasil lab.
-- Toast notification, loading state, dan error handling yang konsisten.
-- Audit log aktivitas dan histori perubahan data.
-- Testing end-to-end.
-- Deploy / hosting.
+### Transaksi laboratorium
+- order pemeriksaan dibuat berdasarkan pasien;
+- status pemeriksaan dapat berubah sesuai tahapan;
+- hasil lab disimpan per parameter;
+- auto-flagging abnormal ketika nilai hasil keluar batas normal sesuai jenis kelamin.
 
-## 🔄 Alur Pengguna (User Flow) Dasar
+### Validasi dokter
+- dokter dapat meninjau hasil laboratorium;
+- catatan dokter bisa ditulis;
+- status dapat berakhir `selesai` atau `revisi`.
 
-1. User login ke sistem.
-2. Sistem mengarahkan ke dashboard sesuai role.
-3. Analis mendaftarkan atau menemukan pasien.
-4. Analis membuat pemeriksaan dan memasukkan hasil lab.
-5. Hasil otomatis dibaca sebagai normal/abnormal.
-6. Dokter meninjau dan melakukan validasi.
-7. Hasil lab dapat diunduh atau dicetak dalam format laporan.
+## Gap yang masih perlu ditutup
 
-## 💻 Tech Stack
+Agar aplikasi benar-benar terasa sebagai sistem data pasien laboratorium yang masuk akal, beberapa poin berikut masih wajib diselesaikan:
+
+- integrasi penuh semua halaman ke API live;
+- alur pasien sampai validasi dokter harus benar-benar bersambung;
+- log aktivitas dan perubahan data harus terdokumentasi;
+- hasil pemeriksaan harus dihubungkan ke laporan pasien dan PDF;
+- search/filter riwayat pasien masih perlu ditambah;
+- notifikasi dan validasi feedback UI harus lebih konsisten.
+
+## Alur kerja yang diharapkan
+
+1. Admin membuat akun dan master data.
+2. Pasien didaftarkan atau dicari. 
+3. Analis membuat order pemeriksaan untuk pasien. 
+4. Hasil laboratorium diinput per parameter. 
+5. Sistem otomatis menandai abnormal berdasarkan parameter + jenis kelamin. 
+6. Dokter menilai hasil, memberi catatan klinis, dan memvalidasi. 
+7. Hasil final siap dipakai dalam laporan dan rekam medis. 
+
+## Tech stack
 
 - Frontend: React + Vite
 - Backend: Node.js + Express
@@ -101,7 +120,7 @@ Area yang masih perlu dikerjakan untuk menjadi sistem yang lebih siap operasiona
 - Auth: JWT + bcrypt
 - API: REST
 
-## 📂 Struktur Folder Proyek
+## Struktur folder proyek
 
 ```text
 INPUT_DATA_PUSKESMAS/
@@ -109,66 +128,61 @@ INPUT_DATA_PUSKESMAS/
 ├── ROADMAP.md
 ├── README.md
 ├── UI.md
-├── .trash/
-└── puskesmas-lab-app/
-    ├── backend/
-    ├── public/
-    ├── src/
-    ├── package.json
-    ├── vite.config.js
-    └── index.html
+├── puskesmas-lab-app/
+│   ├── backend/
+│   ├── public/
+│   ├── src/
+│   ├── package.json
+│   ├── vite.config.js
+│   └── index.html
+└── .trash/
 ```
 
-## 🚀 Cara Menjalankan Proyek
+## Cara menjalankan proyek
 
-### 1. Setup Database PostgreSQL
-Buat database dengan nama `puskesmas_lab` dan jalankan script SQL berikut jika masih belum dibuat:
+### 1. Siapkan database PostgreSQL
+Buat database dengan nama `puskesmas_lab` lalu jalankan skema yang ada di folder backend atau script SQL jika sudah disiapkan.
 
 ```bash
 psql -U postgres -d postgres
 CREATE DATABASE puskesmas_lab;
 ```
 
-### 2. Jalankan Backend
+### 2. Jalankan backend
+
 ```bash
 cd puskesmas-lab-app/backend
 npm install
 node server.js
 ```
 
-### 3. Jalankan Frontend
+### 3. Jalankan frontend
+
 ```bash
 cd puskesmas-lab-app
 npm install
 npm run dev -- --host 0.0.0.0
 ```
 
-### 4. Akses Aplikasi
+### 4. Akses aplikasi
+
 - Frontend: http://localhost:5173
 - Backend: http://localhost:4000
 
-## 🧪 Akun Demo (jika tersedia)
+## Akun demo
 
 - admin2 / admin123
 - analis1 / analis123
 - dokter1 / dokter123
 
-## 🔎 Catatan Kunci
+## Prioritas selanjutnya
 
-Proyek ini sudah punya fondasi yang kuat untuk dikembangkan menjadi aplikasi lab puskesmas yang fungsional. Yang paling penting saat ini bukan lagi membangun fondasi baru, melainkan menutup gap pada:
+1. Menutup integrasi frontend dengan API real-time.
+2. Menyelesaikan workflow pasien → order → hasil → validasi dokter.
+3. Menambahkan audit log aktivitas dan histori perubahan data.
+4. Export PDF rekam medis dan laporan laboratorium.
+5. Testing end-to-end dan deploy lokal.
 
-- data integration,
-- validasi form dan role flow,
-- CRUD admin,
-- dokumentasi operasional,
-- dan fitur finishing seperti export PDF serta testing.
+## Kesimpulan
 
-## 📌 Rekomendasi Prioritas Berikutnya
-
-1. Selesaikan CRUD master data dan user.
-2. Hubungkan frontend ke semua API live.
-3. Uji alur pemeriksaan dan validasi dokter.
-4. Tambahkan PDF export dan log aktivitas.
-5. Jalankan testing dan deploy lokal.
-
-Dokumen ini dapat terus diperbarui sesuai progres pengembangan agar proyek tetap terukur dan mudah dikerjakan secara bertahap.
+Proyek ini sudah memiliki fondasi yang kuat untuk menjadi aplikasi laboratorium puskesmas yang nyata. Tetapi agar benar-benar masuk akal bagi operasional layanan kesehatan, fokus berikutnya bukan hanya CRUD, melainkan alur kerja end-to-end pasien laboratorium: tidak hanya input data, tetapi juga validasi, rekam medis, traceability, dan laporan yang dapat dipakai oleh petugas dan dokter.

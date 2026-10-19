@@ -21,7 +21,7 @@ export const getStoredAuth = () => {
         role: payload.role || parsed.user?.role || 'admin',
       },
     }
-  } catch (error) {
+  } catch {
     return null
   }
 }
@@ -32,3 +32,11 @@ export const getRoleLandingPath = (role) => {
   if (role === 'dokter') return '/dokter'
   return '/login'
 }
+
+const authUtils = {
+  STORAGE_KEY,
+  getStoredAuth,
+  getRoleLandingPath,
+}
+
+export default authUtils

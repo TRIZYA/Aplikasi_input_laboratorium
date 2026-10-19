@@ -1,144 +1,199 @@
-# 🗺️ Peta Jalan (Roadmap) & Checklist Pembuatan Aplikasi Lab Puskesmas
+# 🗺️ Roadmap & Checklist Aplikasi Lab Puskesmas
 
-Dokumen ini dipakai untuk memantau progres aplikasi secara realistis. Kondisi saat ini sudah masuk ke tahap prototype yang cukup siap dipakai sebagai demo functional, tetapi masih ada beberapa bagian yang harus dilengkapi sebelum sistem benar-benar layak dipakai di lingkungan operasional puskesmas.
+Dokumen ini dipakai untuk memantau progress proyek secara realistis sekaligus memastikan aplikasi ini mengikuti alur kerja laboratorium yang masuk akal di dunia nyata: pasien masuk, pasien dibuat order pemeriksaan, hasil diinput, hasil dipersiapkan untuk validasi dokter, lalu laporan/rekam medis dapat dicetak atau ditinjau ulang.
 
-## Status Proyek Saat Ini
-- [x] Struktur dasar proyek dan dokumentasi utama sudah dibuat.
-- [x] Database PostgreSQL dan skema inti sudah siap.
-- [x] Backend utama sudah berfungsi untuk login, pasien, master data, pemeriksaan, dan validasi hasil.
-- [x] Frontend sudah memiliki routing RBAC dan layout modular per role.
-- [ ] CRUD admin untuk user/kategori/parameter belum sepenuhnya tertutup di layer frontend dan backend.
-- [ ] Integrasi frontend dengan API masih perlu dibangun lebih konsisten di seluruh modul.
-- [ ] Fitur PDF, testing end-to-end, dan deployment masih belum selesai.
+## Status proyek saat ini
 
-## Fase 1: Persiapan & Konfigurasi Awal (Setup)
-- [x] Menyusun dokumen proyek (README.md).
-- [x] Menginstal Node.js dan PostgreSQL di komputer.
-- [x] Membuat repositori Git atau folder kerja proyek.
-- [x] Membuat folder proyek utama (`puskesmas-lab-app`).
-- [x] Membuat folder backend di `/puskesmas-lab-app/backend`.
-- [x] Menginisialisasi frontend Vite + React.
-- [x] Menginstal library dasar frontend.
-- [x] Menginstal library dasar backend.
+Proyek ini sudah berada pada tahap prototype yang cukup matang untuk demo fungsional dan pengembangan lanjutan. Fondasi utama yang sudah ada adalah:
 
-## Fase 2: Konfigurasi Database & Pembuatan Tabel Skema
-- [x] Membuat database PostgreSQL (`puskesmas_lab`).
-- [x] Membuat tabel `users` dengan username, password_hash, role, dan identitas petugas.
-- [x] Membuat tabel `pasien` dengan NIK, nama, tanggal lahir, jenis kelamin, alamat, dan no_hp.
-- [x] Membuat tabel `kategori_tes` dan `parameter_tes`.
-- [x] Membuat tabel `pemeriksaan` dan `detail_hasil` untuk order lab dan hasil tes.
-- [x] Menambahkan kolom `is_cito`, `validator_id`, `catatan_dokter`, `status`, serta relasi antar tabel.
-- [x] Menambahkan logika auto-flagging berdasarkan parameter min/max.
-- [x] Insert data dummy untuk kategori, parameter, dan akun demo.
+- [x] Struktur proyek dan dokumentasi dasar sudah siap.
+- [x] Database PostgreSQL sudah dibuat dan skema inti terdefinisi dengan jelas.
+- [x] Backend Express sudah mendukung auth, user, data master, pasien, pemeriksaan, hasil lab, dan validasi dokter.
+- [x] Frontend React + Vite sudah memiliki routing RBAC, layout per role, dan halaman dashboard utama.
+- [x] CRUD master admin untuk user, kategori tes, dan parameter tes sudah terhubung ke API live.
+- [x] Auto-flagging abnormal berdasarkan rentang nilai dan jenis kelamin sudah dibuat di backend.
+- [x] Login demo untuk admin/analis/dokter sudah berfungsi.
+- [x] Integrasi data real-time antar seluruh modul sudah dipercepat secara nyata pada alur pasien → order → hasil → validasi.
+- [x] Flow hasil lab dan validasi dokter sudah terhubung dengan backend live dan data PostgreSQL nyata.
+- [ ] Fitur PDF, audit log, dan deployment operasional masih belum selesai.
 
-## Fase 3: Pengembangan Backend (API / Node.js)
-### 3.1 Auth & Security
-- [x] Koneksi database dari backend berhasil dibuat.
+## Update terbaru (Oktober 2026)
+- [x] Perbaikan login dan auth flow untuk role admin, analis, dan dokter sudah selesai.
+- [x] CRUD admin untuk user, kategori tes, dan parameter tes sudah berjalan di API live.
+- [x] Analis dapat menambahkan pasien baru dan membuat order pemeriksaan dengan kategori tes terpilih.
+- [x] Input hasil lab sudah terhubung dengan parameter yang sesuai kategori dan tersimpan ke backend.
+- [x] Validasi dokter kini bisa meninjau hasil pemeriksaan secara real-time dan menetapkan status `selesai` atau `revisi`.
+- [x] Schema database dan ownership tabel sudah distabilkan agar request ke endpoint pemeriksaan tidak gagal karena masalah permission.
+- [x] Build frontend berhasil dieksekusi tanpa error pada versi terbaru.
+
+## Alur kerja yang benar-benar masuk akal
+
+Aplikasi ini tidak hanya tugas CRUD. Aplikasi laboratorium puskesmas idealnya mengikuti alur berikut:
+
+1. Pasien didaftarkan atau dicari berdasarkan NIK/nama.
+2. Petugas analis membuat order pemeriksaan untuk pasien.
+3. Pemeriksaan ditag dengan prioritas CITO dan status kerja.
+4. Analis menginput hasil lab dan data disimpan.
+5. Sistem membandingkan nilai hasil dengan nilai rujukan sesuai jenis kelamin.
+6. Dokter meninjau hasil, memberi catatan klinis, lalu menyetujui atau merevisi.
+7. Hasil yang sudah final bisa ditindaklanjuti menjadi laporan atau rekam medis.
+
+Jika tidak ada alur seperti ini, aplikasi tersebut belum sepenuhnya terasa sebagai sistem lab pasien yang nyata.
+
+## Fase 1: Persiapan & konfigurasi awal
+- [x] Menyusun dokumen proyek utama.
+- [x] Menyiapkan struktur folder frontend dan backend.
+- [x] Menginstal dependency front-end dan back-end dasar.
+- [x] Menyiapkan PostgreSQL dan konfigurasi koneksi.
+- [x] Membuat akun demo untuk admin, analis, dan dokter.
+
+## Fase 2: Database & skema inti
+- [x] Tabel `users` dibuat dengan role dan password hash.
+- [x] Tabel `pasien` dibuat dengan NIK, nama, tanggal lahir, jenis kelamin, alamat, no_hp.
+- [x] Tabel `kategori_tes` dibuat.
+- [x] Tabel `parameter_tes` dibuat dengan nilai rujukan per gender.
+- [x] Tabel `pemeriksaan` dibuat untuk mengelola order dan status pemeriksaan.
+- [x] Tabel `detail_hasil` dibuat untuk nilai hasil per parameter.
+- [x] Relasi antar tabel dibuat sesuai kebutuhan transaksi lab.
+- [x] Auto-flagging abnormal dibuat berdasarkan min/max dan gender pasien.
+- [x] Data dummy demo untuk kategori, parameter, dan akun user dibuat.
+
+## Fase 3: Pengembangan backend
+### 3.1 Autentikasi & keamanan
 - [x] Endpoint `/api/health` aktif.
-- [x] Endpoint `/api/auth/login` berhasil dibuat dengan JWT.
-- [x] Endpoint `/api/auth/register` aktif untuk membuat user baru.
-- [x] Middleware autentikasi JWT berjalan.
+- [x] Endpoint `/api/auth/login` aktif dengan JWT.
+- [x] Endpoint `/api/auth/register` aktif.
+- [x] JWT auth middleware berjalan.
+- [x] Role-based access control dibuat.
 
-### 3.2 Data Master & Pasien
-- [x] Endpoint pasien: GET/POST/PUT/DELETE berhasil dibuat.
-- [x] Endpoint kategori tes: GET/POST aktif.
-- [x] Endpoint parameter tes: POST dan query berdasarkan kategori aktif.
-- [x] Endpoint `/api/master` untuk mengambil data kategori + parameter aktif.
-- [ ] CRUD update/delete untuk `kategori_tes` dan `parameter_tes` perlu ditambahkan jika ingin pengelolaan master data lengkap.
-- [ ] CRUD user lengkap (read all, update, delete, reset password) masih belum sepenuhnya tertutup.
+### 3.2 Data master & pasien
+- [x] CRUD pasien aktif.
+- [x] CRUD kategori tes aktif.
+- [x] CRUD parameter tes aktif.
+- [x] Endpoint `/api/master` aktif untuk ambil data master.
+- [x] User CRUD lengkap (read, update, delete, reset password) aktif di backend.
 
-### 3.3 Transaksi Pemeriksaan & Hasil
-- [x] Endpoint `/api/pemeriksaan` untuk membuat dan melihat data pemeriksaan.
-- [x] Endpoint `/api/pemeriksaan/:id` untuk detail pemeriksaan.
-- [x] Endpoint `/api/pemeriksaan/:id/hasil` untuk menyimpan hasil lab dan auto-flagging.
-- [x] Endpoint `/api/pemeriksaan/:id/validasi` untuk status revisi/selesai.
-- [x] Status pemeriksaan: `menunggu`, `proses`, `menunggu_validasi`, `revisi`, `selesai`.
-- [ ] Validasi status per role perlu diperkuat pada sisi frontend dan backend.
-- [ ] Pencarian, filter, dan pagination data pemeriksaan belum lengkap.
+### 3.3 Pemeriksaan & hasil lab
+- [x] Endpoint `/api/pemeriksaan` aktif.
+- [x] Endpoint `/api/pemeriksaan/:id` aktif.
+- [x] Endpoint `/api/pemeriksaan/:id/hasil` aktif.
+- [x] Endpoint `/api/pemeriksaan/:id/validasi` aktif.
+- [x] Status pemeriksaan mendukung workflow lab yang masuk akal: `menunggu`, `proses`, `menunggu_validasi`, `revisi`, `selesai`.
+- [x] Flow pemeriksaan sudah terintegrasi ke kategori tes dan hasil lab yang relevan.
+- [ ] Validasi status per role perlu diperkuat supaya tidak ada role yang melakukan aksi di luar wewenang.
+- [ ] Pencarian, filter, dan pagination data pemeriksaan masih belum lengkap.
 
-### 3.4 Logging & Audit
-- [ ] Sistem log aktivitas petugas belum dibuat.
-- [ ] History login, edit data, validasi hasil, dan delete data belum terdokumentasi.
-- [ ] Riwayat audit untuk keperluan keamanan / rekam medis masih perlu ditambahkan.
+### 3.4 Audit & operasional
+- [ ] Log aktivitas user belum dibuat.
+- [ ] Histori perubahan data belum terdokumentasi secara sistematis.
+- [ ] Modal dan form validasi perlu dibuat lebih aman untuk operasi nyata.
 
-## Fase 4: Pengembangan Frontend - Routing & Layout (RBAC)
-- [x] Routing aplikasi dibuat dengan React Router.
-- [x] AuthGuard untuk memproteksi route sesuai role.
-- [x] Login page berbasis JWT token selesai.
-- [x] Layout utama dengan sidebar dan topbar per role selesai.
-- [x] Struktur folder modular: pages, layout, utils, auth, common.
-- [ ] UI perlu lebih konsisten dari sisi validasi form dan loading state.
-- [ ] Fallback error state / toast / notifikasi belum sepenuhnya diterapkan.
+## Fase 4: Frontend - routing & layout
+- [x] Routing dibuat dengan React Router.
+- [x] Protected route sesuai role dibuat.
+- [x] Login page dan layout utama selesai.
+- [x] Sidebar dan top navigation per role sudah dibuat.
+- [x] Struktur folder modular sudah distandarkan.
+- [ ] Form validasi dan loading state masih perlu dibuat lebih konsisten di seluruh halaman.
+- [ ] Notifikasi UI / toast dan fallback error state belum sepenuhnya diterapkan.
 
-## Fase 5: Pengembangan Frontend - Modul Admin (Master Data)
-- [x] Dashboard Admin dasar sudah dibuat.
-- [x] Tabel user demo aktif.
-- [x] Tabel kategori tes aktif.
-- [x] Tabel parameter tes aktif.
-- [x] Form tambah data dasar sudah tersedia secara visual.
-- [ ] CRUD admin untuk user belum terhubung penuh ke API.
-- [ ] CRUD admin untuk kategori/parameter belum terhubung penuh ke API.
-- [ ] Validasi input, tombol edit/hapus, dan modal form belum final.
+## Fase 5: Frontend - modul admin
+- [x] Dashboard admin dasar dibuat.
+- [x] Manajemen user aktif.
+- [x] Manajemen kategori tes aktif.
+- [x] Manajemen parameter tes aktif.
+- [x] Form tambah dan edit user, kategori, parameter sudah ada dalam modal.
+- [x] Validasi form dan pengecekan nilai rentang sudah diterapkan.
+- [ ] UX admin masih perlu diperhalus untuk seluruh CRUD agar lebih konsisten dan lebih “operasional-ready”.
 
-## Fase 6: Pengembangan Frontend - Modul Analis (Transaksi)
-- [x] Halaman pasien tersedia.
-- [x] Halaman order pemeriksaan tersedia.
-- [x] Halaman input hasil lab tersedia.
-- [x] Auto-flagging visual untuk abnormal result sudah ada.
-- [ ] Data ini masih perlu dihubungkan ke API live secara real-time.
-- [ ] Form dinamis berdasarkan kategori & parameter masih perlu disinkronkan ke backend.
-- [ ] Loading state, error handling, dan tombol simpan/publish belum sepenuhnya final.
+## Fase 6: Frontend - modul analis
+- [x] Halaman pasien dibuat.
+- [x] Halaman order pemeriksaan dibuat.
+- [x] Halaman input hasil lab dibuat.
+- [x] Aksi auto-flagging hasil lab sudah tersedia secara visual.
+- [x] Integrasi ke API real-time untuk pasien dan hasil sudah berjalan dengan data live.
+- [x] Form berdasarkan parameter disesuaikan dengan kategori yang dipilih dan berfungsi secara dinamis.
+- [x] Simpan hasil lab sudah aktif dan memicu status `menunggu_validasi` di backend.
 
-## Fase 7: Pengembangan Frontend - Modul Dokter (Validasi Klinis)
-- [x] Dashboard dokter dasar tersedia.
+## Fase 7: Frontend - modul dokter
+- [x] Dashboard dokter dasar dibuat.
 - [x] Antrean validasi dibuat.
-- [x] Tinjauan hasil dan catatan dokter tersedia.
-- [x] Riwayat pasien tersedia.
-- [ ] Detail hasil dan validasi dokter perlu dihubungkan dengan data pemeriksaan nyata.
-- [ ] Button revisi/validasi perlu mengirim data ke API dan memperbarui status secara ujung-ke-ujung.
-- [ ] Pencarian riwayat pasien dan filter data perlu ditingkatkan.
+- [x] Detail hasil dan review dokter dibuat.
+- [x] Riwayat pasien dibuat.
+- [x] Validasi dokter sudah terhubung ke data pemeriksaan live dan dapat menyetujui atau merevisi hasil.
+- [x] Status revisi dan validasi sudah diproses di backend.
+- [ ] Pencarian dan filter riwayat pasien masih perlu ditingkatkan.
 
-## Fase 8: Fitur Tambahan & Finishing
-### Prioritas P0 (harus dikerjakan sebelum production)
-- [ ] Fitur cetak/eksport PDF rekam medis.
-- [ ] Testing/Uji coba fungsionalitas menyeluruh.
-- [ ] Verifikasi RBAC, umur pasien, auto-flagging, dan validasi dokter.
-- [ ] Konsistensi data master dan relasi foreign key.
-- [ ] Menangani error API, loading, dan validasi form yang belum lengkap.
+## Fase 8: Fitur tambahan & finishing
+### Prioritas P0 (wajib sebelum production)
+- [ ] Export PDF rekam medis / hasil pemeriksaan.
+- [ ] Testing end-to-end pada alur pasien → order → hasil → validasi → laporan.
+- [ ] Verifikasi RBAC dan hak akses per role.
+- [ ] Validasi umur pasien, status pemeriksaan, dan auto-flagging.
+- [ ] Error handling, loading state, dan form validation yang konsisten.
 
 ### Prioritas P1 (penting untuk demo atau pilot)
-- [ ] CRUD lengkap user, kategori tes, dan parameter tes.
-- [ ] Pencarian/filter yang lebih canggih untuk pasien dan pemeriksaan.
-- [ ] Notifikasi / toast / status request di frontend.
-- [ ] Halaman detail pasien, riwayat, dan rekam medis lebih lengkap.
+- [ ] Audit log aktivitas petugas.
+- [ ] Pencarian filter data pemeriksaan dan riwayat pasien.
+- [ ] Notifikasi toast untuk aksi CRUD dan validasi.
+- [ ] Halaman detail pasien yang lebih lengkap.
+- [ ] Rekap harian / bulanan pemeriksaan.
 
 ### Prioritas P2 (fitur lanjutan)
-- [ ] Deploy/hosting ke server lokal Puskesmas.
+- [ ] Deploy ke server lokal puskesmas / intranet.
 - [ ] Backup & restore database.
-- [ ] Export Excel/CSV rekap harian/bulanan.
-- [ ] Integrasi dengan sistem Dinas Kesehatan atau sistem lain.
-- [ ] Audit trail dan manajemen log aktivitas.
+- [ ] Export Excel/CSV rekap harian.
+- [ ] Integrasi dengan sistem dinas kesehatan atau sistem lain.
+- [ ] SOP operasional dan pelatihan petugas.
 
-## Cicilan Progres yang Disarankan
-### Cicilan 1: Stabilitas Data & Backend
-- [ ] Setting env dan konfigurasi prod-safe.
-- [ ] CRUD lengkap admin.
-- [ ] Validasi backend untuk semua endpoint.
-- [ ] Endpoint audit log.
+## Cicilan kerja yang disarankan
 
-### Cicilan 2: Integrasi Frontend Real Data
-- [ ] Hubungkan semua halaman ke API live.
-- [ ] Uji form tambah pasien, form input hasil, dan review dokter.
-- [ ] Tambahkan loading/error state.
+### Cicilan 1: Stabilitas data & backend
+- [ ] Setting env dan konfigurasi aman untuk produksi.
+- [ ] Validasi endpoint backend lebih ketat.
+- [ ] Audit log dan histori perubahan data.
+- [ ] Integritas data foreign key dan index query.
 
-### Cicilan 3: Finishing & Dokumentasi
+### Cicilan 2: Integrasi frontend real data
+- [ ] Hubungkan semua module ke API live.
+- [ ] Uji routing dan form pasien, order, hasil, dan validasi dokter.
+- [ ] Tambahkan notifikasi, loading, dan error state yang konsisten.
+
+### Cicilan 3: Finishing & dokumentasi
 - [ ] PDF export rekam medis.
 - [ ] Testing end-to-end.
 - [ ] Uji responsifitas UI.
-- [ ] Finalisasi README dan SOP penggunaan.
+- [ ] Finalisasi SOP penggunaan dan dokumentasi operasional.
 
-### Cicilan 4: Deploy & Operasional
-- [ ] Hosting lokal / server intranet.
+### Cicilan 4: Deploy & operasional
+- [ ] Hosting lokal / intranet puskesmas.
 - [ ] Backup data dan jadwal maintenance.
 - [ ] SOP admin dan user manual.
 - [ ] Pelatihan singkat untuk petugas.
+
+### Cicilan 5: Alur kerja laboratorium yang benar-benar hidup
+- [ ] Modul pasien: daftar pasien, pencarian NIK/nama, validasi data demografi, dan detail pasien lengkap.
+- [ ] Modul order pemeriksaan: pilih pasien, pilih kategori tes, prioritas CITO, status awal, dan auto-create order.
+- [ ] Modul input hasil: tampilkan parameter sesuai kategori, masukkan nilai per item, simpan draft hasil, dan cegah input kosong/invalid.
+- [ ] Modul validasi dokter: review hasil, catatan klinis, status revisi/diterima, dan riwayat validasi per pemeriksaan.
+- [ ] Modul rekam medis: tampilkan ringkasan hasil pasien, diagnosis/komentar dokter, dan tombol export PDF.
+- [ ] Sinkronisasi status antar role: analis, dokter, dan admin harus melihat status yang konsisten pada pemeriksaan yang sama.
+- [ ] Notifikasi dan audit trail untuk setiap perubahan urutan kerja laboratorium.
+
+### Cicilan 6: Penguatan keamanan & kualitas data
+- [ ] Validasi role di backend untuk semua endpoint yang mengubah status pemeriksaan dan hasil lab.
+- [ ] Pembatasan akses per role untuk patient detail, hasil lab, dan validasi dokter.
+- [ ] Uji unit/integrasi untuk login, pasien, order, hasil, dan validasi dokter.
+- [ ] Pengecekan nilai hasil abnormal dan batasan rujukan sesuai jenis kelamin pada setiap submit.
+- [ ] Error handling yang lebih jelas untuk edge case: data tidak ditemukan, input invalid, token expired, dan duplikasi NIK.
+
+## Gap kritis yang perlu diselesaikan agar lebih masuk akal sebagai aplikasi lab
+
+1. Aplikasi harus memisahkan secara jelas antara data pasien, order pemeriksaan, dan hasil pemeriksaan.
+2. Setiap pemeriksaan harus bisa dilacak sampai validasi dokter dan status final.
+3. Hasil lab harus dibaca dengan referensi pasien dan parameter yang sesuai.
+4. Audit log harus dibuat agar semua perubahan data terekam dengan jelas.
+5. Antrean validasi dokter harus dihubungkan ke pemeriksaan real dan bukan hanya data static.
+6. Laporan PDF harus bisa menampilkan ringkasan hasil lab untuk pasien.
+
+Dengan gap tersebut, proyek akan lebih mudah dinilai sebagai sistem laboratorium nyata, bukan hanya aplikasi CRUD master data yang belum terhubung ke alur klinis.

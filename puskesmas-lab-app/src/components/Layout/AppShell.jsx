@@ -1,9 +1,13 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { FiChevronLeft, FiLogOut, FiMenu } from 'react-icons/fi'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { getStoredAuth } from '../../utils/auth'
 
-function AppShell({ role, title, description, accentClass = 'admin', children }) {
+function AppShell({ role, title, children }) {
   const navigate = useNavigate()
+  const location = useLocation()
   const auth = getStoredAuth()
+  const [sidebarOpen, setSidebarOpen] = useState(true)
 
   const handleLogout = () => {
     localStorage.removeItem('puskesmas_lab_auth')
@@ -31,25 +35,61 @@ function AppShell({ role, title, description, accentClass = 'admin', children })
   }
 
   const currentUser = auth?.user || { username: 'User', role }
+  const isActiveLink = (path) => location.pathname === path || (path !== '/admin' && location.pathname.startsWith(path))
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand">
-          <span className="brand-mark">+</span>
-          <div>
-            <strong>Puskesmas Lab</strong>
-            <small>{currentUser.username}</small>
+    <div className={`app-shell ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+      <button
+        type="button"
+        className={`sidebar-trigger ${sidebarOpen ? 'hidden' : ''}`}
+        onClick={() => setSidebarOpen(true)}
+        aria-label="Buka sidebar"
+      >
+        <FiMenu />
+      </button>
+
+      <aside className={`sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
+        <div className="sidebar-header">
+          <div className="brand">
+            <span className="brand-mark">+</span>
+            <div>
+              <strong>Puskesmas Lab</strong>
+              <small>{currentUser.username}</small>
+            </div>
           </div>
+          <button
+            type="button"
+            className="sidebar-toggle"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Tutup sidebar"
+          >
+            <FiChevronLeft />
+          </button>
+        </div>
+
+        <div className="user-chip">
+          <span className="dot" />
+          {currentUser.role || role}
         </div>
 
         <nav className="nav">
           {menuItems[role].map((item) => (
-            <Link key={item.path} to={item.path} className="nav-link">
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`nav-link ${isActiveLink(item.path) ? 'active' : ''}`}
+            >
               {item.label}
             </Link>
           ))}
         </nav>
+
+        <div className="sidebar-footer">
+          <button type="button" className="sidebar-logout-btn" onClick={handleLogout}>
+            <span className="logout-btn__icon"><FiLogOut /></span>
+            <span>Keluar</span>
+          </button>
+        </div>
       </aside>
 
       <main className="content-area">
@@ -58,27 +98,7 @@ function AppShell({ role, title, description, accentClass = 'admin', children })
             <span className="role-badge">{role.toUpperCase()}</span>
             <h2>{title}</h2>
           </div>
-          <button className="logout-btn" onClick={handleLogout}>Keluar</button>
         </header>
-
-        <section className="page-intro">
-          <p>{description}</p>
-        </section>
-
-        <div className="stats-grid">
-          <div className={`stat-card ${accentClass}`}>
-            <span>Jumlah Data</span>
-            <strong>24</strong>
-          </div>
-          <div className={`stat-card ${accentClass}`}>
-            <span>Butuh Tindakan</span>
-            <strong>8</strong>
-          </div>
-          <div className={`stat-card ${accentClass}`}>
-            <span>Status Hari Ini</span>
-            <strong>OK</strong>
-          </div>
-        </div>
 
         {children}
       </main>
@@ -86,4 +106,5 @@ function AppShell({ role, title, description, accentClass = 'admin', children })
   )
 }
 
+export { AppShell }
 export default AppShell

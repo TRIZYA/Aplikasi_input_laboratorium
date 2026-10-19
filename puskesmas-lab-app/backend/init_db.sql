@@ -52,6 +52,7 @@ CREATE TABLE parameter_tes (
 CREATE TABLE pemeriksaan (
     id SERIAL PRIMARY KEY,
     pasien_id INTEGER NOT NULL REFERENCES pasien(id) ON DELETE CASCADE,
+    kategori_id INTEGER REFERENCES kategori_tes(id) ON DELETE SET NULL,
     dokter_perujuk VARCHAR(100),
     is_cito BOOLEAN NOT NULL DEFAULT FALSE,
     analis_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
@@ -73,7 +74,9 @@ CREATE TABLE detail_hasil (
 
 INSERT INTO users (username, password_hash, role, nama_lengkap)
 VALUES
-    ('admin', '$2b$10$dummyhash_admin_1234567890', 'admin', 'Admin Laboratorium');
+    ('admin2', '$2b$10$Xt6Uga/DHxzD/uwYAEv0E.Kua1AtCN/het2CB4UeOUcINCmXR93s2', 'admin', 'Admin Laboratorium'),
+    ('analis1', '$2b$10$l42zRQT2XmnCo0nux0BnzuSYcFJvUHmkfVRVXcn7rEIEzUwJsJWzO', 'analis', 'Analis Laboratorium'),
+    ('dokter1', '$2b$10$0XINDH9lN/7qbRCGGoMq.e1bqfeLmO4r.Cfdfc2sFIS5YLF2cKfZm', 'dokter', 'Dokter Puskesmas');
 
 INSERT INTO pasien (nik, nama_pasien, tanggal_lahir, jenis_kelamin, alamat, no_hp)
 VALUES
@@ -91,9 +94,9 @@ VALUES
     (2, 'Gula Darah', 'mg/dL', '70 - 140', 70.0, 140.0, 70.0, 140.0),
     (2, 'Asam Urat', 'mg/dL', '3.5 - 7.2 (Pria), 2.6 - 6.0 (Wanita)', 3.5, 7.2, 2.6, 6.0);
 
-INSERT INTO pemeriksaan (pasien_id, dokter_perujuk, is_cito, analis_id, validator_id, catatan_dokter, status, waktu_daftar)
+INSERT INTO pemeriksaan (pasien_id, kategori_id, dokter_perujuk, is_cito, analis_id, validator_id, catatan_dokter, status, waktu_daftar)
 VALUES
-    (1, 'Dr. Sari', FALSE, 1, 1, 'Pasien dalam kondisi stabil.', 'selesai', CURRENT_TIMESTAMP);
+    (1, 1, 'Dr. Sari', FALSE, 1, 1, 'Pasien dalam kondisi stabil.', 'selesai', CURRENT_TIMESTAMP);
 
 INSERT INTO detail_hasil (pemeriksaan_id, parameter_id, nilai_hasil, is_abnormal, catatan)
 VALUES

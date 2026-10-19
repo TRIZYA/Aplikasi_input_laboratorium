@@ -1,0 +1,12 @@
+                                                       List of databases
+     Name      |  Owner   | Encoding | Locale Provider |   Collate   |    Ctype    | Locale | ICU Rules |   Access privileges   
+---------------+----------+----------+-----------------+-------------+-------------+--------+-----------+-----------------------
+ postgres      | postgres | UTF8     | libc            | id_ID.UTF-8 | id_ID.UTF-8 |        |           | 
+ puskesmas_lab | zilong   | UTF8     | libc            | id_ID.UTF-8 | id_ID.UTF-8 |        |           | =Tc/zilong           +
+               |          |          |                 |             |             |        |           | zilong=CTc/zilong
+ template0     | postgres | UTF8     | libc            | id_ID.UTF-8 | id_ID.UTF-8 |        |           | =c/postgres          +
+               |          |          |                 |             |             |        |           | postgres=CTc/postgres
+ template1     | postgres | UTF8     | libc            | id_ID.UTF-8 | id_ID.UTF-8 |        |           | =c/postgres          +
+               |          |          |                 |             |             |        |           | postgres=CTc/postgres
+(4 rows)
+

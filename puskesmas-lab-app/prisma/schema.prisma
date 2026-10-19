@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int          @id @default(autoincrement())
+  username     String       @unique @db.VarChar(50)
+  passwordHash String       @map("password_hash") @db.VarChar(255)
+  role         String       @db.VarChar(20)
+  namaLengkap  String       @map("nama_lengkap") @db.VarChar(100)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  pemeriksaanAnalis Pemeriksaan[] @relation("AnalisPemeriksaan")
+  pemeriksaanValidator Pemeriksaan[] @relation("ValidatorPemeriksaan")
+
+  @@map("users")
+}
+
+model Pasien {
+  id           Int      @id @default(autoincrement())
+  nik          String   @unique @db.VarChar(16)
+  namaPasien   String   @map("nama_pasien") @db.VarChar(100)
+  tanggalLahir DateTime @map("tanggal_lahir") @db.Date
+  jenisKelamin String   @map("jenis_kelamin") @db.VarChar(1)
+  alamat      String?  @db.Text
+  noHp        String?  @map("no_hp") @db.VarChar(15)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  pemeriksaan Pemeriksaan[]
+
+  @@map("pasien")
+}
+
+model KategoriTes {
+  id          Int           @id @default(autoincrement())
+  namaKategori String        @unique @map("nama_kategori") @db.VarChar(100)
+  deskripsi   String?       @db.Text
+  parameterTes ParameterTes[]
+  pemeriksaan Pemeriksaan[]
+
+  @@map("kategori_tes")
+}
+
+model ParameterTes {
+  id            Int          @id @default(autoincrement())
+  kategoriId    Int          @map("kategori_id")
+  namaParameter String       @map("nama_parameter") @db.VarChar(100)
+  satuan        String?      @db.VarChar(20)
+  nilaiRujukan  String?      @map("nilai_rujukan") @db.VarChar(100)
+  minPria       Float?       @map("min_pria")
+  maxPria       Float?       @map("max_pria")
+  minWanita     Float?       @map("min_wanita")
+  maxWanita     Float?       @map("max_wanita")
+  kategori      KategoriTes  @relation(fields: [kategoriId], references: [id], onDelete: Cascade)
+  detailHasil   DetailHasil[]
+
+  @@unique([kategoriId, namaParameter])
+  @@map("parameter_tes")
+}
+
+model Pemeriksaan {
+  id             Int          @id @default(autoincrement())
+  pasienId       Int          @map("pasien_id")
+  kategoriId     Int?         @map("kategori_id")
+  dokterPerujuk  String?      @map("dokter_perujuk") @db.VarChar(100)
+  isCito         Boolean      @default(false) @map("is_cito")
+  analisId       Int          @map("analis_id")
+  validatorId    Int?         @map("validator_id")
+  catatanDokter  String?      @map("catatan_dokter") @db.Text
+  status         String       @default("menunggu") @db.VarChar(20)
+  waktuDaftar    DateTime     @default(now()) @map("waktu_daftar")
+  waktuSelesai   DateTime?    @map("waktu_selesai")
+
+  pasien         Pasien       @relation(fields: [pasienId], references: [id], onDelete: Cascade)
+  kategori       KategoriTes? @relation(fields: [kategoriId], references: [id], onDelete: SetNull)
+  analis         User         @relation("AnalisPemeriksaan", fields: [analisId], references: [id], onDelete: Restrict)
+  validator      User?        @relation("ValidatorPemeriksaan", fields: [validatorId], references: [id], onDelete: Restrict)
+  detailHasil    DetailHasil[]
+
+  @@map("pemeriksaan")
+}
+
+model DetailHasil {
+  id             Int         @id @default(autoincrement())
+  pemeriksaanId  Int         @map("pemeriksaan_id")
+  parameterId    Int         @map("parameter_id")
+  nilaiHasil     String      @map("nilai_hasil") @db.VarChar(50)
+  isAbnormal    Boolean     @default(false) @map("is_abnormal")
+  catatan       String?     @db.Text
+
+  pemeriksaan   Pemeriksaan @relation(fields: [pemeriksaanId], references: [id], onDelete: Cascade)
+  parameter     ParameterTes @relation(fields: [parameterId], references: [id], onDelete: Restrict)
+
+  @@map("detail_hasil")
+}

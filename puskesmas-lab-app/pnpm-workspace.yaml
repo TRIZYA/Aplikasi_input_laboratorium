@@ -1,8 +1,11 @@
 packages:
   - "."
 allowBuilds:
+  '@prisma/client': false
+  '@prisma/engines': true
   bcrypt: set this to true or false
   esbuild: set this to true or false
+  prisma: true
   workerd: set this to true or false
 onlyBuiltDependencies:
   - esbuild

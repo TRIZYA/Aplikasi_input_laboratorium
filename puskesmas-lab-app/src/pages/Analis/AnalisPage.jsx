@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { FiCheck, FiPlus } from 'react-icons/fi'
 import AppShell from '../../components/Layout/AppShell'
+import { buildApiUrl } from '../../utils/api'
 import { getStoredAuth } from '../../utils/auth'
 
 const emptyPatientForm = {
@@ -97,7 +98,7 @@ function AnalisPage() {
     if (!token) return
 
     try {
-      const data = await fetchAuthJson('http://localhost:4000/api/pasien')
+      const data = await fetchAuthJson(buildApiUrl('/api/pasien'))
       setPatients(Array.isArray(data) ? data : data.data || [])
     } catch (err) {
       setError(err.message)
@@ -108,7 +109,7 @@ function AnalisPage() {
     if (!token) return
 
     try {
-      const data = await fetchAuthJson('http://localhost:4000/api/kategori-tes')
+      const data = await fetchAuthJson(buildApiUrl('/api/kategori-tes'))
       const rows = Array.isArray(data) ? data : data.data || []
       setCategories(rows)
       setOrderForm((current) => ({
@@ -124,7 +125,7 @@ function AnalisPage() {
     if (!token) return
 
     try {
-      const data = await fetchAuthJson('http://localhost:4000/api/pemeriksaan')
+      const data = await fetchAuthJson(buildApiUrl('/api/pemeriksaan'))
       const rows = Array.isArray(data) ? data : data.data || []
       const activeRows = rows.filter((item) => item.status !== 'selesai')
       const parameterizedRows = activeRows.filter((item) => item.kategori_id)
@@ -154,7 +155,7 @@ function AnalisPage() {
     }
 
     try {
-      const params = await fetchAuthJson(`http://localhost:4000/api/kategori-tes/${targetOrder.kategori_id}/parameter`)
+      const params = await fetchAuthJson(buildApiUrl(`/api/kategori-tes/${targetOrder.kategori_id}/parameter`))
       const paramRows = Array.isArray(params) ? params : params.data || []
 
       setResultParameters(paramRows)
@@ -222,7 +223,7 @@ function AnalisPage() {
     event.preventDefault()
 
     try {
-      await fetchAuthJson('http://localhost:4000/api/pasien', {
+      await fetchAuthJson(buildApiUrl('/api/pasien'), {
         method: 'POST',
         body: JSON.stringify({
           nik: patientForm.nik.trim(),
@@ -251,7 +252,7 @@ function AnalisPage() {
     }
 
     try {
-      await fetchAuthJson('http://localhost:4000/api/pemeriksaan', {
+      await fetchAuthJson(buildApiUrl('/api/pemeriksaan'), {
         method: 'POST',
         body: JSON.stringify({
           pasien_id: Number(orderForm.pasien_id),
@@ -318,7 +319,7 @@ function AnalisPage() {
     setError('')
 
     try {
-      await fetchAuthJson(`http://localhost:4000/api/pemeriksaan/${selectedResultOrderId}/hasil`, {
+      await fetchAuthJson(buildApiUrl(`/api/pemeriksaan/${selectedResultOrderId}/hasil`), {
         method: 'POST',
         body: JSON.stringify({ hasil }),
       })

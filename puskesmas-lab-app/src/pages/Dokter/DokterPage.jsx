@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import AppShell from '../../components/Layout/AppShell'
+import { buildApiUrl } from '../../utils/api'
 import { getStoredAuth } from '../../utils/auth'
 
 const statusLabel = {
@@ -77,7 +78,7 @@ function DokterPage() {
     setError('')
 
     try {
-      const data = await fetchAuthJson('http://localhost:4000/api/pemeriksaan')
+      const data = await fetchAuthJson(buildApiUrl('/api/pemeriksaan'))
       const rows = Array.isArray(data) ? data : data.data || []
       setPemeriksaanRows(rows)
 
@@ -95,7 +96,7 @@ function DokterPage() {
     if (!pemeriksaanId || !token) return
 
     try {
-      const data = await fetchAuthJson(`http://localhost:4000/api/pemeriksaan/${pemeriksaanId}`)
+      const data = await fetchAuthJson(buildApiUrl(`/api/pemeriksaan/${pemeriksaanId}`))
       setSelectedDetail(data)
       setCatatanDokter(data.catatan_dokter || '')
     } catch (err) {
@@ -123,7 +124,7 @@ function DokterPage() {
     setError('')
 
     try {
-      await fetchAuthJson(`http://localhost:4000/api/pemeriksaan/${selectedId}/validasi`, {
+      await fetchAuthJson(buildApiUrl(`/api/pemeriksaan/${selectedId}/validasi`), {
         method: 'POST',
         body: JSON.stringify({
           validator_id: Number(currentUserId),

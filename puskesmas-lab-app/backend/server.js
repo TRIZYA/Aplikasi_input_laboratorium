@@ -10,6 +10,10 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 4000;
 const DB_NAME = process.env.DB_NAME || 'puskesmas_lab';
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -19,13 +23,20 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
 });
 
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error('Origin not allowed by CORS'));
+  },
+  credentials: true,
+}));
 app.use(express.json());
 
 const DEMO_USERS = [
-  { username: 'admin2', password: 'admin123', role: 'admin', nama_lengkap: 'Admin Laboratorium' },
-  { username: 'analis1', password: 'analis123', role: 'analis', nama_lengkap: 'Analis Laboratorium' },
-  { username: 'dokter1', password: 'dokter123', role: 'dokter', nama_lengkap: 'Dokter Puskesmas' },
   { username: 'demo1', password: 'demo123', role: 'demo', nama_lengkap: 'Demo Read Only' },
 ];
 

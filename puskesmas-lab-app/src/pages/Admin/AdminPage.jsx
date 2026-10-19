@@ -7,6 +7,7 @@ import {
   validateParameterForm,
   validateUserForm,
 } from '../../utils/adminValidation'
+import { buildApiUrl } from '../../utils/api'
 import { getStoredAuth } from '../../utils/auth'
 
 const emptyCategoryForm = {
@@ -98,7 +99,7 @@ function AdminPage() {
     setError('')
 
     try {
-      const data = await fetchAuthJson('http://localhost:4000/api/users')
+      const data = await fetchAuthJson(buildApiUrl('/api/users'))
       const rows = (data.data || data || []).map((user) => ({
         id: user.id,
         username: user.username,
@@ -123,7 +124,7 @@ function AdminPage() {
     setError('')
 
     try {
-      const data = await fetchAuthJson('http://localhost:4000/api/master')
+      const data = await fetchAuthJson(buildApiUrl('/api/master'))
       setKategoriRows(data.kategori || [])
       setParameterRows(data.parameter || [])
 
@@ -211,7 +212,7 @@ function AdminPage() {
 
     try {
       if (editingUserId) {
-        const data = await fetchAuthJson(`http://localhost:4000/api/users/${editingUserId}`, {
+        const data = await fetchAuthJson(buildApiUrl(`/api/users/${editingUserId}`), {
           method: 'PUT',
           body: JSON.stringify({
             username: userForm.username.trim(),
@@ -221,7 +222,7 @@ function AdminPage() {
         })
 
         if (trimmedPassword) {
-          await fetchAuthJson(`http://localhost:4000/api/users/${editingUserId}/reset-password`, {
+          await fetchAuthJson(buildApiUrl(`/api/users/${editingUserId}/reset-password`), {
             method: 'POST',
             body: JSON.stringify({ new_password: trimmedPassword }),
           })
@@ -237,7 +238,7 @@ function AdminPage() {
           ? `Data user "${data.data.username}" berhasil diperbarui dan password direset.`
           : `Data user "${data.data.username}" berhasil diperbarui.`)
       } else {
-        const data = await fetchAuthJson('http://localhost:4000/api/auth/register', {
+        const data = await fetchAuthJson(buildApiUrl('/api/auth/register'), {
           method: 'POST',
           body: JSON.stringify({
             username: userForm.username.trim(),
@@ -301,7 +302,7 @@ function AdminPage() {
       }
 
       if (editingCategoryId) {
-        const data = await fetchAuthJson(`http://localhost:4000/api/kategori-tes/${editingCategoryId}`, {
+        const data = await fetchAuthJson(buildApiUrl(`/api/kategori-tes/${editingCategoryId}`), {
           method: 'PUT',
           body: JSON.stringify(payload),
         })
@@ -309,7 +310,7 @@ function AdminPage() {
         setKategoriRows((current) => current.map((row) => row.id === editingCategoryId ? data.data : row))
         setSuccessMessage(`Kategori "${data.data.nama_kategori}" berhasil diperbarui.`)
       } else {
-        const data = await fetchAuthJson('http://localhost:4000/api/kategori-tes', {
+        const data = await fetchAuthJson(buildApiUrl('/api/kategori-tes'), {
           method: 'POST',
           body: JSON.stringify(payload),
         })
@@ -382,7 +383,7 @@ function AdminPage() {
       }
 
       if (editingParameterId) {
-        const data = await fetchAuthJson(`http://localhost:4000/api/parameter-tes/${editingParameterId}`, {
+        const data = await fetchAuthJson(buildApiUrl(`/api/parameter-tes/${editingParameterId}`), {
           method: 'PUT',
           body: JSON.stringify(payload),
         })
@@ -390,7 +391,7 @@ function AdminPage() {
         setParameterRows((current) => current.map((row) => row.id === editingParameterId ? data.data : row))
         setSuccessMessage(`Parameter "${data.data.nama_parameter}" berhasil diperbarui.`)
       } else {
-        const data = await fetchAuthJson('http://localhost:4000/api/parameter-tes', {
+        const data = await fetchAuthJson(buildApiUrl('/api/parameter-tes'), {
           method: 'POST',
           body: JSON.stringify(payload),
         })
@@ -430,19 +431,19 @@ function AdminPage() {
 
     try {
       if (deleteTarget.type === 'user') {
-        await fetchAuthJson(`http://localhost:4000/api/users/${deleteTarget.id}`, { method: 'DELETE' })
+        await fetchAuthJson(buildApiUrl(`/api/users/${deleteTarget.id}`), { method: 'DELETE' })
         setUserRows((current) => current.filter((user) => user.id !== deleteTarget.id))
         setSuccessMessage('User berhasil dihapus.')
       }
 
       if (deleteTarget.type === 'category') {
-        await fetchAuthJson(`http://localhost:4000/api/kategori-tes/${deleteTarget.id}`, { method: 'DELETE' })
+        await fetchAuthJson(buildApiUrl(`/api/kategori-tes/${deleteTarget.id}`), { method: 'DELETE' })
         setKategoriRows((current) => current.filter((row) => row.id !== deleteTarget.id))
         setSuccessMessage(`Kategori "${deleteTarget.label}" berhasil dihapus.`)
       }
 
       if (deleteTarget.type === 'parameter') {
-        await fetchAuthJson(`http://localhost:4000/api/parameter-tes/${deleteTarget.id}`, { method: 'DELETE' })
+        await fetchAuthJson(buildApiUrl(`/api/parameter-tes/${deleteTarget.id}`), { method: 'DELETE' })
         setParameterRows((current) => current.filter((row) => row.id !== deleteTarget.id))
         setSuccessMessage(`Parameter "${deleteTarget.label}" berhasil dihapus.`)
       }

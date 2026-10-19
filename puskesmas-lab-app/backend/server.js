@@ -15,12 +15,27 @@ const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+const matchesAllowedOrigin = (origin) => {
+  if (!origin) return true;
+
+  return allowedOrigins.some((allowedOrigin) => {
+    if (allowedOrigin.includes('*')) {
+      const escaped = allowedOrigin
+        .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+        .replace(/\*/g, '.*');
+      return new RegExp(`^${escaped}$`).test(origin);
+    }
+
+    return origin === allowedOrigin;
+  });
+};
+
 const databaseConfig = buildDatabaseConfig(process.env);
 const pool = new Pool(databaseConfig);
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (matchesAllowedOrigin(origin)) {
       callback(null, true);
       return;
     }
@@ -1045,6 +1060,8 @@ module.exports.pool = pool;
 module.exports.ensureDemoUsers = ensureDemoUsers;
 module.exports.ensureKnownAdmin = ensureKnownAdmin;
 module.exports.ensureDatabaseReady = ensureDatabaseReady;
+module.exports.matchesAllowedOrigin = matchesAllowedOrigin;
+module.exports.isAllowedOrigin = matchesAllowedOrigin;
 
 if (require.main === module) {
   startServer();

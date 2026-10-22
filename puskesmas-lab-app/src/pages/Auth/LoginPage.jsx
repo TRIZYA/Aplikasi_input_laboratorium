@@ -39,13 +39,19 @@ function LoginPage() {
       try {
         data = text ? JSON.parse(text) : {}
       } catch {
+        if (response.status === 405) {
+          throw new Error(
+            'Endpoint /api/auth/login tidak diizinkan (405). Pastikan route API aktif di Vercel.'
+          )
+        }
+
         throw new Error(
           'API login tidak mengembalikan JSON. Pastikan endpoint /api/auth/login aktif di Vercel.'
         )
       }
 
       if (!response.ok) {
-        throw new Error(data.message || 'Login gagal')
+        throw new Error(data.message || `Login gagal (${response.status})`)
       }
 
       localStorage.setItem(

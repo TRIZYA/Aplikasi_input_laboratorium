@@ -84,10 +84,21 @@ function AdminPage() {
       headers,
     })
 
-    const data = await response.json().catch(() => ({}))
+    const text = await response.text()
+    let data = {}
+
+    try {
+      data = text ? JSON.parse(text) : {}
+    } catch {
+      if (response.status === 405) {
+        throw new Error(`Endpoint tidak diizinkan (${response.status}). Cek route API di Vercel.`)
+      }
+
+      throw new Error(data.message || 'Respons API bukan JSON. Cek apakah endpoint aktif.')
+    }
 
     if (!response.ok) {
-      throw new Error(data.message || 'Permintaan gagal')
+      throw new Error(data.message || `Permintaan gagal (${response.status})`)
     }
 
     return data

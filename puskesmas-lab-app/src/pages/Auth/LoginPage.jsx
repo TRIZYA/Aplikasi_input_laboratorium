@@ -33,7 +33,16 @@ function LoginPage() {
         body: JSON.stringify(payload),
       })
 
-      const data = await response.json()
+      const text = await response.text()
+      let data = {}
+
+      try {
+        data = text ? JSON.parse(text) : {}
+      } catch {
+        throw new Error(
+          'API login tidak mengembalikan JSON. Pastikan endpoint /api/auth/login aktif di Vercel.'
+        )
+      }
 
       if (!response.ok) {
         throw new Error(data.message || 'Login gagal')

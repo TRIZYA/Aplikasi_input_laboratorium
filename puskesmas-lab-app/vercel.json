@@ -16,12 +16,6 @@
       "destination": {
         "service": "backend"
       }
-    },
-    {
-      "source": "/(.*)",
-      "destination": {
-        "service": "app"
-      }
     }
   ],
   "routes": [

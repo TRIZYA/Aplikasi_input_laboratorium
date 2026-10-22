@@ -18,10 +18,9 @@
       }
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": {
-        "source": "/(.*)",
-        "destination": "/index.html"
+        "service": "app"
       }
     }
   ]

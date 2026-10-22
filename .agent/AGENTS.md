@@ -14,30 +14,87 @@ Agent harus memeriksa hasil perubahan secara langsung melalui live preview jika 
 
 ## 2. Project Structure
 
-Struktur utama repository:
+Struktur repository saat ini adalah sebagai berikut:
 
 ```text
 INPUT_DATA_PUSKESMAS/
-├── AGENTS.md
-├── DATABASE_SCHEMA.md
-├── ROADMAP.md
-├── README.md
-├── UI.md
+├── .agent/
+│   └── AGENTS.md
+├── .git/
+├── .gitignore
 ├── .trash/
-└── puskesmas-lab-app/
-    ├── backend/
-    │   ├── server.js
-    │   └── ...
-    ├── public/
-    ├── src/
-    ├── package.json
-    ├── vite.config.js
-    └── index.html
+├── .vscode/
+├── no-slop-ui/
+│   ├── README.md
+│   ├── SKILL.md
+│   ├── assets/
+│   ├── docs/
+│   │   ├── agent-snippets.md
+│   │   └── conversion-proof.md
+│   ├── examples/
+│   │   ├── before-after.html
+│   │   ├── README.md
+│   │   └── review-checklist.md
+│   ├── references/
+│   │   ├── banned-patterns.md
+│   │   └── colour-palettes.md
+│   └── scripts/
+│       └── validate_skill_repo.py
+├── node_modules/
+├── package.json
+├── pnpm-lock.yaml
+├── pnpm-workspace.yaml
+├── puskesmas-lab-app/
+│   ├── .env
+│   ├── .env.example
+│   ├── .gitignore
+│   ├── README.md
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── package.json
+│   ├── pnpm-lock.yaml
+│   ├── pnpm-workspace.yaml
+│   ├── vite.config.js
+│   ├── vercel.json
+│   ├── dist/
+│   ├── public/
+│   ├── backend/
+│   │   ├── .env.example
+│   │   ├── dbConfig.js
+│   │   ├── dbConfig.test.js
+│   │   ├── init_db.sql
+│   │   ├── package.json
+│   │   ├── server.js
+│   │   └── ...
+│   ├── prisma/
+│   │   ├── schema.prisma
+│   │   └── migrations/
+│   └── src/
+│       ├── App.css
+│       ├── App.jsx
+│       ├── index.css
+│       ├── main.jsx
+│       ├── assets/
+│       ├── components/
+│       │   └── Layout/
+│       │       └── AppShell.jsx
+│       ├── hooks/
+│       │   └── usePageAlerts.js
+│       ├── pages/
+│       │   ├── Admin/
+│       │   ├── Analis/
+│       │   ├── Auth/
+│       │   ├── Common/
+│       │   └── Dokter/
+│       └── utils/
+│           ├── adminValidation.js
+│           ├── adminValidation.test.js
+│           ├── api.js
+│           └── auth.js
+└── ...
 ```
 
-Struktur di atas merupakan gambaran awal. Selalu periksa struktur aktual sebelum mengasumsikan nama atau lokasi file.
-
-Folder `puskesmas-lab-app/` adalah root aplikasi utama. Frontend dan backend dapat memiliki konfigurasi serta dependensi masing-masing.
+Folder `puskesmas-lab-app/` adalah root aplikasi utama dan merupakan area kerja aktif untuk frontend, backend, Prisma, serta deployment Vercel. Struktur ini dapat berkembang sesuai kebutuhan fitur, tetapi perubahan penting selalu harus dicek ulang sebelum dibuat asumsi.
 
 ## 3. Tech Stack
 

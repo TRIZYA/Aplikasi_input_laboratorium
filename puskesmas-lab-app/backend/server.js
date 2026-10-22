@@ -195,10 +195,10 @@ const isOutOfRange = async (parameterId, nilaiHasil, pasienId) => {
 
 app.get('/api/health', async (req, res) => {
   try {
-    const result = await pool.query('SELECT NOW() as now');
-    res.json({ status: 'ok', time: result.rows[0].now });
+    await pool.query('SELECT 1');
+    res.json({ ok: true });
   } catch (error) {
-    res.status(500).json({ message: 'Database connection failed', error: error.message });
+    res.status(500).json({ ok: false, message: 'Database connection failed', error: error.message });
   }
 });
 

@@ -5,22 +5,17 @@
       "root": ".",
       "framework": "vite",
       "rewrites": [
-        { "source": "/(.*)"}
+        { "source": "/((?!api/).*)", "destination": "/index.html" }
       ]
     },
     "backend": {
       "root": "backend",
-      "framework": "express"
+      "framework": "express",
+      "entrypoint": "server.js"
     }
   },
   "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": { "service": "backend" }
-    },
-    {
-      "source": "/(.*)",
-      "destination": { "service": "app" }
-    }
+    { "source": "/api/(.*)", "destination": { "service": "backend" } },
+    { "source": "/(.*)", "destination": { "service": "app" } }
   ]
 }

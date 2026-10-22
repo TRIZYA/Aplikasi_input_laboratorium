@@ -275,6 +275,41 @@ function AnalisPage() {
     }
   }
 
+  const selectedResultOrder = resultOrders.find((item) => String(item.id) === String(selectedResultOrderId)) || orders.find((item) => String(item.id) === String(selectedResultOrderId)) || null
+
+  const getParameterRange = (parameter, gender = selectedResultOrder?.jenis_kelamin || 'L') => {
+    const min = gender === 'L' ? parameter.min_pria : parameter.min_wanita
+    const max = gender === 'L' ? parameter.max_pria : parameter.max_wanita
+
+    if (min != null || max != null) {
+      return `${min ?? '-'} – ${max ?? '-'}`
+    }
+
+    return parameter.nilai_rujukan || 'Nilai referensi tidak tersedia'
+  }
+
+  const getResultIndicator = (parameter, value) => {
+    const rawValue = value?.nilai_hasil
+    if (!rawValue || rawValue.trim() === '') {
+      return 'empty'
+    }
+
+    const numericValue = Number(rawValue)
+    if (Number.isNaN(numericValue)) {
+      return 'empty'
+    }
+
+    const gender = selectedResultOrder?.jenis_kelamin || 'L'
+    const min = gender === 'L' ? parameter.min_pria : parameter.min_wanita
+    const max = gender === 'L' ? parameter.max_pria : parameter.max_wanita
+
+    if (min == null || max == null) {
+      return 'normal'
+    }
+
+    return numericValue >= min && numericValue <= max ? 'normal' : 'abnormal'
+  }
+
   const handleResultFieldChange = (parameterId, field, value) => {
     setResultValues((current) => ({
       ...current,
@@ -505,15 +540,26 @@ function AnalisPage() {
 
           {isHasil && (
             <section className="panel">
-              <div className="panel-header">
-                <h3>Input Hasil Lab</h3>
+              <div className="lab-header">
+                <div>
+                  <p className="section-kicker">Pemeriksaan</p>
+                  <h3>Input Hasil Lab</h3>
+                </div>
+                <div className="lab-header-status">
+                  <span className={`status-pill ${selectedResultOrder?.is_cito ? 'danger' : 'neutral'}`}>
+                    {selectedResultOrder?.is_cito ? 'CITO' : 'Reguler'}
+                  </span>
+                  <span className="status-pill neutral">
+                    {statusLabel[selectedResultOrder?.status] || 'Menunggu'}
+                  </span>
+                </div>
               </div>
 
               {error && <div className="error-box">{error}</div>}
               {successMessage && <div className="success-box">{successMessage}</div>}
 
               <div className="form-grid">
-                <label className="field">
+                <label className="field" style={{ gridColumn: '1 / -1' }}>
                   <span>Pemeriksaan</span>
                   <select value={selectedResultOrderId} onChange={(event) => setSelectedResultOrderId(event.target.value)}>
                     <option value="">Pilih pemeriksaan</option>
@@ -526,34 +572,68 @@ function AnalisPage() {
                 </label>
               </div>
 
+              {selectedResultOrder && (
+                <div className="lab-identity">
+                  <div className="meta-item">
+                    <span>Pasien</span>
+                    <strong>{selectedResultOrder.nama_pasien}</strong>
+                  </div>
+                  <div className="meta-item">
+                    <span>NIK</span>
+                    <strong>{selectedResultOrder.nik || '-'}</strong>
+                  </div>
+                  <div className="meta-item">
+                    <span>Kategori</span>
+                    <strong>{selectedResultOrder.nama_kategori || 'Tes'}</strong>
+                  </div>
+                  <div className="meta-item">
+                    <span>Prioritas</span>
+                    <strong>{selectedResultOrder.is_cito ? 'CITO' : 'Reguler'}</strong>
+                  </div>
+                </div>
+              )}
+
               {selectedResultOrderId && resultParameters.length > 0 ? (
                 <form onSubmit={handleResultSubmit}>
                   <div className="table-scroll">
-                    <table className="data-table compact-table">
+                    <table className="data-table compact-table lab-result-table">
                       <thead>
                         <tr>
                           <th>Parameter</th>
                           <th>Nilai</th>
-                          <th>Satuan</th>
+                          <th>Referensi</th>
                           <th>Catatan</th>
                         </tr>
                       </thead>
                       <tbody>
                         {resultParameters.map((parameter) => {
                           const value = resultValues[String(parameter.id)] || {}
+                          const indicator = getResultIndicator(parameter, value)
 
                           return (
                             <tr key={parameter.id}>
-                              <td>{parameter.nama_parameter}</td>
                               <td>
-                                <input
-                                  className="inline-input"
-                                  value={value.nilai_hasil || ''}
-                                  onChange={(event) => handleResultFieldChange(parameter.id, 'nilai_hasil', event.target.value)}
-                                  placeholder="Masukkan nilai"
-                                />
+                                <div className="param-name">
+                                  <strong>{parameter.nama_parameter}</strong>
+                                  <span className="param-range">{parameter.satuan || 'Satuan tidak tersedia'}</span>
+                                </div>
                               </td>
-                              <td>{parameter.satuan || '-'}</td>
+                              <td>
+                                <div className="result-input-wrap">
+                                  <input
+                                    className="inline-input"
+                                    value={value.nilai_hasil || ''}
+                                    onChange={(event) => handleResultFieldChange(parameter.id, 'nilai_hasil', event.target.value)}
+                                    placeholder="Masukkan nilai"
+                                  />
+                                  <span className={`result-tag ${indicator}`}>
+                                    {indicator === 'normal' ? 'Normal' : indicator === 'abnormal' ? 'Abnormal' : 'Belum diisi'}
+                                  </span>
+                                </div>
+                              </td>
+                              <td>
+                                <span className="param-range">{getParameterRange(parameter)}</span>
+                              </td>
                               <td>
                                 <input
                                   className="inline-input"

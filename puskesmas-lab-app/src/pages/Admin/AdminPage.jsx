@@ -9,6 +9,7 @@ import {
 } from '../../utils/adminValidation'
 import { buildApiUrl } from '../../utils/api'
 import { getStoredAuth } from '../../utils/auth'
+import { usePageAlerts } from '../../hooks/usePageAlerts'
 
 const emptyCategoryForm = {
   nama_kategori: '',
@@ -149,6 +150,15 @@ function AdminPage() {
 
     return () => clearTimeout(timer)
   }, [loadMasterData, loadUsers])
+
+  usePageAlerts([
+    () => setError(''),
+    () => setSuccessMessage(''),
+    () => setCategoryFormError(''),
+    () => setParameterFormError(''),
+    () => setUserFormError(''),
+    () => setDeleteTarget(null),
+  ])
 
   const handleCategoryChange = (event) => {
     const { name, value } = event.target
@@ -554,7 +564,7 @@ function AdminPage() {
             {(isKategori || isParameter) && (
               <section className="panel-stack">
                 {isKategori ? (
-                  <div className="panel">
+                <div className="panel">
                 <div className="panel-header">
                   <h3>Kategori Tes</h3>
                   {!isDemoUser && (
@@ -712,6 +722,7 @@ function AdminPage() {
               {userFormError && <div className="error-box">{userFormError}</div>}
 
               <div className="modal-actions">
+                <button type="button" className="mini-button" onClick={closeUserModal}>Batal</button>
                 {editingUserId && (
                   <button
                     type="button"
@@ -723,7 +734,6 @@ function AdminPage() {
                     <span>Hapus User</span>
                   </button>
                 )}
-                <button type="button" className="mini-button" onClick={closeUserModal}>Batal</button>
                 <button type="submit" className="action-button primary">{editingUserId ? 'Simpan Perubahan' : 'Tambah User'}</button>
               </div>
             </form>
@@ -752,20 +762,25 @@ function AdminPage() {
               {categoryFormError && <div className="error-box">{categoryFormError}</div>}
 
               <div className="modal-actions">
-                {editingCategoryId && (
-                  <button
-                    type="button"
-                    className="mini-button danger"
-                    onClick={() => handleDeleteCategory({ id: editingCategoryId, nama_kategori: categoryForm.nama_kategori })}
-                  >
-                    <span className="action-button__icon"><FiTrash2 /></span>
-                    <span>Hapus Kategori</span>
+                <div className="modal-actions__left">
+                  {editingCategoryId && (
+                    <button
+                      type="button"
+                      className="mini-button danger"
+                      onClick={() => handleDeleteCategory({ id: editingCategoryId, nama_kategori: categoryForm.nama_kategori })}
+                    >
+                      <span className="action-button__icon"><FiTrash2 /></span>
+                      <span>Hapus Kategori</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="modal-actions__right">
+                  <button type="button" className="mini-button" onClick={closeCategoryModal}>Batal</button>
+                  <button type="submit" className="action-button primary" disabled={submitting}>
+                    {submitting ? 'Menyimpan...' : (editingCategoryId ? 'Simpan Perubahan' : 'Tambah Kategori')}
                   </button>
-                )}
-                <button type="button" className="mini-button" onClick={closeCategoryModal}>Batal</button>
-                <button type="submit" className="action-button primary" disabled={submitting}>
-                  {submitting ? 'Menyimpan...' : (editingCategoryId ? 'Simpan Perubahan' : 'Tambah Kategori')}
-                </button>
+                </div>
               </div>
             </form>
           </div>
@@ -821,20 +836,25 @@ function AdminPage() {
               {parameterFormError && <div className="error-box modal-error">{parameterFormError}</div>}
 
               <div className="modal-actions modal-actions-full">
-                {editingParameterId && (
-                  <button
-                    type="button"
-                    className="mini-button danger"
-                    onClick={() => handleDeleteParameter({ id: editingParameterId, nama_parameter: parameterForm.nama_parameter })}
-                  >
-                    <span className="action-button__icon"><FiTrash2 /></span>
-                    <span>Hapus Parameter</span>
+                <div className="modal-actions__left">
+                  {editingParameterId && (
+                    <button
+                      type="button"
+                      className="mini-button danger"
+                      onClick={() => handleDeleteParameter({ id: editingParameterId, nama_parameter: parameterForm.nama_parameter })}
+                    >
+                      <span className="action-button__icon"><FiTrash2 /></span>
+                      <span>Hapus Parameter</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="modal-actions__right">
+                  <button type="button" className="mini-button" onClick={closeParameterModal}>Batal</button>
+                  <button type="submit" className="action-button primary" disabled={submitting}>
+                    {submitting ? 'Menyimpan...' : (editingParameterId ? 'Simpan Perubahan' : 'Tambah Parameter')}
                   </button>
-                )}
-                <button type="button" className="mini-button" onClick={closeParameterModal}>Batal</button>
-                <button type="submit" className="action-button primary" disabled={submitting}>
-                  {submitting ? 'Menyimpan...' : (editingParameterId ? 'Simpan Perubahan' : 'Tambah Parameter')}
-                </button>
+                </div>
               </div>
             </form>
           </div>
@@ -849,8 +869,11 @@ function AdminPage() {
             </div>
             <p>Apakah Anda yakin ingin menghapus {deleteTarget.label}?</p>
             <div className="modal-actions">
-              <button type="button" className="mini-button" onClick={() => setDeleteTarget(null)}>Batal</button>
-              <button type="button" className="action-button danger" onClick={confirmDelete}>Hapus</button>
+              <div className="modal-actions__left" />
+              <div className="modal-actions__right">
+                <button type="button" className="mini-button" onClick={() => setDeleteTarget(null)}>Batal</button>
+                <button type="button" className="action-button danger" onClick={confirmDelete}>Hapus</button>
+              </div>
             </div>
           </div>
         </div>

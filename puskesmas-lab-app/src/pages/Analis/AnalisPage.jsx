@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { FiCheck, FiPlus } from 'react-icons/fi'
 import AppShell from '../../components/Layout/AppShell'
+import { usePageAlerts } from '../../hooks/usePageAlerts'
 import { buildApiUrl } from '../../utils/api'
 import { getStoredAuth } from '../../utils/auth'
 
@@ -193,6 +194,11 @@ function AnalisPage() {
   useEffect(() => {
     void loadData()
   }, [loadData])
+
+  usePageAlerts([
+    () => setError(''),
+    () => setSuccessMessage(''),
+  ])
 
   useEffect(() => {
     if (selectedResultOrderId) {

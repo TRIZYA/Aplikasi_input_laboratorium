@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import AppShell from '../../components/Layout/AppShell'
+import { usePageAlerts } from '../../hooks/usePageAlerts'
 import { buildApiUrl } from '../../utils/api'
 import { getStoredAuth } from '../../utils/auth'
 
@@ -107,6 +108,11 @@ function DokterPage() {
   useEffect(() => {
     void loadPemeriksaan()
   }, [loadPemeriksaan])
+
+  usePageAlerts([
+    () => setError(''),
+    () => setSuccessMessage(''),
+  ])
 
   useEffect(() => {
     if (selectedId) {

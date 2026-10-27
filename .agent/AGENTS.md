@@ -14,30 +14,87 @@ Agent harus memeriksa hasil perubahan secara langsung melalui live preview jika 
 
 ## 2. Project Structure
 
-Struktur utama repository:
+Struktur repository saat ini adalah sebagai berikut:
 
 ```text
 INPUT_DATA_PUSKESMAS/
-├── AGENTS.md
-├── DATABASE_SCHEMA.md
-├── ROADMAP.md
-├── README.md
-├── UI.md
+├── .agent/
+│   └── AGENTS.md
+├── .git/
+├── .gitignore
 ├── .trash/
-└── puskesmas-lab-app/
-    ├── backend/
-    │   ├── server.js
-    │   └── ...
-    ├── public/
-    ├── src/
-    ├── package.json
-    ├── vite.config.js
-    └── index.html
+├── .vscode/
+├── no-slop-ui/
+│   ├── README.md
+│   ├── SKILL.md
+│   ├── assets/
+│   ├── docs/
+│   │   ├── agent-snippets.md
+│   │   └── conversion-proof.md
+│   ├── examples/
+│   │   ├── before-after.html
+│   │   ├── README.md
+│   │   └── review-checklist.md
+│   ├── references/
+│   │   ├── banned-patterns.md
+│   │   └── colour-palettes.md
+│   └── scripts/
+│       └── validate_skill_repo.py
+├── node_modules/
+├── package.json
+├── pnpm-lock.yaml
+├── pnpm-workspace.yaml
+├── puskesmas-lab-app/
+│   ├── .env
+│   ├── .env.example
+│   ├── .gitignore
+│   ├── README.md
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── package.json
+│   ├── pnpm-lock.yaml
+│   ├── pnpm-workspace.yaml
+│   ├── vite.config.js
+│   ├── vercel.json
+│   ├── dist/
+│   ├── public/
+│   ├── backend/
+│   │   ├── .env.example
+│   │   ├── dbConfig.js
+│   │   ├── dbConfig.test.js
+│   │   ├── init_db.sql
+│   │   ├── package.json
+│   │   ├── server.js
+│   │   └── ...
+│   ├── prisma/
+│   │   ├── schema.prisma
+│   │   └── migrations/
+│   └── src/
+│       ├── App.css
+│       ├── App.jsx
+│       ├── index.css
+│       ├── main.jsx
+│       ├── assets/
+│       ├── components/
+│       │   └── Layout/
+│       │       └── AppShell.jsx
+│       ├── hooks/
+│       │   └── usePageAlerts.js
+│       ├── pages/
+│       │   ├── Admin/
+│       │   ├── Analis/
+│       │   ├── Auth/
+│       │   ├── Common/
+│       │   └── Dokter/
+│       └── utils/
+│           ├── adminValidation.js
+│           ├── adminValidation.test.js
+│           ├── api.js
+│           └── auth.js
+└── ...
 ```
 
-Struktur di atas merupakan gambaran awal. Selalu periksa struktur aktual sebelum mengasumsikan nama atau lokasi file.
-
-Folder `puskesmas-lab-app/` adalah root aplikasi utama. Frontend dan backend dapat memiliki konfigurasi serta dependensi masing-masing.
+Folder `puskesmas-lab-app/` adalah root aplikasi utama dan merupakan area kerja aktif untuk frontend, backend, Prisma, serta deployment Vercel. Struktur ini dapat berkembang sesuai kebutuhan fitur, tetapi perubahan penting selalu harus dicek ulang sebelum dibuat asumsi.
 
 ## 3. Tech Stack
 
@@ -384,3 +441,26 @@ Setelah menyelesaikan tugas, berikan ringkasan:
 Jangan mengklaim semua fitur berjalan hanya berdasarkan tampilan visual.
 
 **Final principle: Implement carefully, inspect the real application, fix what is wrong, verify the result, and report honestly.**
+
+## 17. Catatan implementasi dan keputusan (27 Oktober 2026)
+
+### Server dan API
+- Selalu cek `http://localhost:5173` sebelum menyalakan dev server. Jika sudah aktif, jangan jalankan `pnpm run dev` kedua kali; gunakan HMR pada server milik user.
+- Fallback `API_BASE_URL` di `src/utils/api.js` adalah string kosong dan caller menyertakan `/api/...`. Jangan menghasilkan path `/api/api/...`.
+- Bedakan error: `ECONNREFUSED` = backend tidak terjangkau; 404 = route/method salah; CORS bukan perbaikan untuk keduanya. Validasi status dan Content-Type sebelum parse JSON.
+
+### Database, foto, dan notifikasi
+- Prisma datasource mengandalkan `DATABASE_URL`; backend memakai URL tersebut sebelum fallback `DB_HOST` dkk.
+- Kolom `users.foto_profil` menyimpan JPEG data URL base64 256 x 256. UI menerima JPG/PNG/WebP lalu crop square dan ekspor JPEG; backend harus tetap memvalidasi format/dimensi.
+- Tabel `notifications` terhubung ke `users` dengan cascade. Setiap query/list/read harus memakai `user_id` dari JWT.
+- Migration additive profil/notifikasi sudah diterapkan. Periksa status Prisma sebelum migration; jangan menjalankan SQL bootstrap yang berisi DROP untuk update skema.
+- Credential `.env` pernah terpapar dalam percakapan: jangan echo, dokumentasikan, atau salin nilainya; rotasi sebelum penggunaan operasional.
+
+### UI dan analytics
+- Analytics dashboard berlaku untuk Admin, Analis, dan Dokter; gunakan KPI sesuai workflow masing-masing dan chart agregat tanpa PII. Hindari mock angka permanen.
+- Desktop menggunakan sidebar; mobile menggunakan bottom navbar ikon 72px tanpa toggle. Logout menjadi item ikon di ujung navbar.
+- Active navigation harus exact-match untuk Dashboard; prefix matching hanya boleh untuk nested route non-dashboard agar dua menu tidak aktif bersamaan.
+- Scroll vertikal berada pada `.content-area`; body tidak boleh melebar. Scroll horizontal tabel/chart berada pada wrapper komponen.
+- Wrapper tabel disejajarkan ke konten panel, sedangkan padding kiri teks sel dijaga terpisah.
+- Tombol aksi konten memakai ikon relevan plus label teks; aturan ini tidak mengubah tombol shell di topbar/navbar/sidebar.
+- Profil di topbar menampilkan nama dan username; role tidak boleh diduplikasi di sidebar. Kontrol role, bell, dan profil dijaga pada tinggi 40px.

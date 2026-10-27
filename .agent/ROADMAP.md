@@ -197,3 +197,21 @@ Jika tidak ada alur seperti ini, aplikasi tersebut belum sepenuhnya terasa sebag
 6. Laporan PDF harus bisa menampilkan ringkasan hasil lab untuk pasien.
 
 Dengan gap tersebut, proyek akan lebih mudah dinilai sebagai sistem laboratorium nyata, bukan hanya aplikasi CRUD master data yang belum terhubung ke alur klinis.
+
+## Update implementasi 27 Oktober 2026
+
+Checklist ini memperbarui status fitur yang mungkin masih tercatat belum selesai pada bagian sebelumnya.
+
+- [x] Analytics berbasis data nyata pada dashboard Admin, Analis, dan Dokter.
+- [x] Endpoint analytics mengembalikan agregat tanpa identitas pasien dan membatasi akses berdasarkan role.
+- [x] Profil mandiri: nama, username, foto JPEG base64 hasil crop 256 x 256; password tidak dapat diubah dari fitur ini.
+- [x] Tabel notifikasi terhubung ke user, endpoint baca/belum dibaca, dan notifikasi transisi hasil ke dokter/analis.
+- [x] Migration `20261027000000_profile_notifications` diterapkan dan status Prisma terverifikasi up to date.
+- [x] Ikon dan ukuran tombol konten diseragamkan; sidebar aktif hanya menyorot route yang tepat.
+- [x] Layout responsif: sidebar desktop, bottom navbar ikon mobile, content container sebagai area scroll, tabel/chart memakai scroll internal.
+- [ ] Rotasi credential yang pernah terpapar sebelum penggunaan operasional.
+- [ ] Audit log/histori perubahan.
+- [ ] Export PDF dan tes end-to-end lengkap lintas role.
+- [ ] Filter/pagination riwayat pasien dan pemeriksaan.
+
+Jangan memakai angka contoh permanen untuk dashboard; pertahankan sumber data API agregat dan empty/loading/error state.

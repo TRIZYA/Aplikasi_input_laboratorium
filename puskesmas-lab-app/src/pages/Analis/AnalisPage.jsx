@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { FiCheck, FiPlus } from 'react-icons/fi'
+import { FiActivity, FiCheck, FiCheckCircle, FiClipboard, FiPlus, FiSave, FiUsers, FiX } from 'react-icons/fi'
 import AppShell from '../../components/Layout/AppShell'
+import AdminAnalytics from '../../components/UI/AdminAnalytics'
+import SummaryMetric from '../../components/UI/SummaryMetric'
+import { useDashboardAnalytics } from '../../hooks/useDashboardAnalytics'
 import { usePageAlerts } from '../../hooks/usePageAlerts'
 import { buildApiUrl } from '../../utils/api'
 import { getStoredAuth } from '../../utils/auth'
@@ -55,6 +58,7 @@ function AnalisPage() {
   const token = auth?.token
   const currentUserId = auth?.user?.id
   const isDemoUser = auth?.user?.role === 'demo'
+  const { data: dashboardAnalytics, loading: analyticsLoading, error: analyticsError } = useDashboardAnalytics(isDashboard)
 
   const [patients, setPatients] = useState([])
   const [categories, setCategories] = useState([])
@@ -391,26 +395,17 @@ function AnalisPage() {
       )}
 
       {isDashboard ? (
-        <div className="panel-stack dashboard-summary">
-          <section className="panel">
-            <div className="panel-header">
-              <h3>Ringkasan Analis</h3>
-            </div>
-            <div className="summary-grid">
-              <div className="summary-card analis">
-                <span>Pasien Terdaftar</span>
-                <strong>{patients.length}</strong>
-              </div>
-              <div className="summary-card analis">
-                <span>Order Menunggu</span>
-                <strong>{orders.filter((item) => item.status !== 'selesai').length}</strong>
-              </div>
-              <div className="summary-card analis">
-                <span>Hasil Tersimpan</span>
-                <strong>{orders.filter((item) => item.status === 'menunggu_validasi' || item.status === 'selesai').length}</strong>
-              </div>
-            </div>
-          </section>
+        <div className="dashboard-summary">
+          <div className="dashboard-summary-heading">
+            <h3>Ringkasan Analis</h3>
+          </div>
+          <div className="summary-grid">
+            <SummaryMetric icon={FiUsers} label="Pasien Terdaftar" value={analyticsLoading ? '—' : dashboardAnalytics?.summary?.total_pasien ?? 0} tone="analis" />
+            <SummaryMetric icon={FiClipboard} label="Order Aktif" value={analyticsLoading ? '—' : dashboardAnalytics?.summary?.order_aktif ?? 0} tone="analis" />
+            <SummaryMetric icon={FiCheckCircle} label="Hasil Tersimpan" value={analyticsLoading ? '—' : dashboardAnalytics?.summary?.hasil_tersimpan ?? 0} tone="analis" />
+            <SummaryMetric icon={FiActivity} label="Abnormal · 30 hari" value={analyticsLoading ? '—' : dashboardAnalytics?.summary?.hasil_abnormal_30_hari ?? 0} tone="analis" />
+          </div>
+          <AdminAnalytics data={dashboardAnalytics} loading={analyticsLoading} error={analyticsError} />
         </div>
       ) : (
         <div className="panel-stack">
@@ -677,7 +672,9 @@ function AnalisPage() {
           <div className="modal-card" onClick={(event) => event.stopPropagation()}>
             <div className="modal-header">
               <h3>Tambah Pasien</h3>
-              <button type="button" className="mini-button" onClick={closePatientModal}>Tutup</button>
+              <button type="button" className="mini-button" onClick={closePatientModal}>
+                <span className="action-button__icon"><FiX /></span><span>Tutup</span>
+              </button>
             </div>
 
             <form onSubmit={handlePatientSubmit} className="form-grid modal-form">
@@ -715,8 +712,12 @@ function AnalisPage() {
               </label>
 
               <div className="modal-actions" style={{ gridColumn: '1 / -1' }}>
-                <button type="button" className="mini-button" onClick={closePatientModal}>Batal</button>
-                <button type="submit" className="action-button primary">Simpan Pasien</button>
+                <button type="button" className="mini-button" onClick={closePatientModal}>
+                  <span className="action-button__icon"><FiX /></span><span>Batal</span>
+                </button>
+                <button type="submit" className="action-button primary">
+                  <span className="action-button__icon"><FiSave /></span><span>Simpan Pasien</span>
+                </button>
               </div>
             </form>
           </div>

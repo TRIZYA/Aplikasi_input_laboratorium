@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { FiLogIn } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
 import { buildApiUrl } from '../../utils/api'
 import { STORAGE_KEY, getRoleLandingPath } from '../../utils/auth'
@@ -91,6 +92,7 @@ function LoginPage() {
           {error && <div className="error-box">{error}</div>}
 
           <button type="submit" disabled={loading}>
+            <span className="action-button__icon"><FiLogIn /></span>
             {loading ? 'Memproses...' : 'Masuk'}
           </button>
         </form>

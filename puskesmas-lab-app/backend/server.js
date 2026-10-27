@@ -44,7 +44,7 @@ app.use(cors({
   },
   credentials: true,
 }));
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
 const DEMO_USERS = [
   { username: 'admin', password: 'admin123', role: 'admin', nama_lengkap: 'Admin Laboratorium' },
@@ -157,6 +157,64 @@ const denyDemoMutation = (req, res) => {
   return null;
 };
 
+const insertNotificationsForRole = (queryable, role, title, message, href) => {
+  return queryable.query(
+    `INSERT INTO notifications (user_id, title, message, href)
+     SELECT id, $2, $3, $4 FROM users WHERE role = $1`,
+    [role, title, message, href]
+  );
+};
+
+const getJpegDimensions = (value) => {
+  if (
+    typeof value !== 'string'
+    || value.length > 350000
+    || !value.startsWith('data:image/jpeg;base64,')
+  ) return null;
+
+  const encoded = value.slice('data:image/jpeg;base64,'.length);
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)) return null;
+
+  const image = Buffer.from(encoded, 'base64');
+  if (image.toString('base64') !== encoded) return null;
+  if (image.length < 4 || image.length > 256 * 1024 || image[0] !== 0xff || image[1] !== 0xd8) {
+    return null;
+  }
+
+  const frameMarkers = new Set([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf]);
+  let offset = 2;
+
+  while (offset + 3 < image.length) {
+    if (image[offset] !== 0xff) return null;
+    while (image[offset] === 0xff) offset += 1;
+
+    const marker = image[offset];
+    offset += 1;
+    if (marker === 0xd9 || marker === 0xda) break;
+    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) continue;
+    if (offset + 2 > image.length) return null;
+
+    const segmentLength = image.readUInt16BE(offset);
+    if (segmentLength < 2 || offset + segmentLength > image.length) return null;
+
+    if (frameMarkers.has(marker)) {
+      return {
+        height: image.readUInt16BE(offset + 3),
+        width: image.readUInt16BE(offset + 5),
+      };
+    }
+
+    offset += segmentLength;
+  }
+
+  return null;
+};
+
+const isValidProfilePhoto = (value) => {
+  const dimensions = getJpegDimensions(value);
+  return dimensions?.width === 256 && dimensions?.height === 256;
+};
+
 const getPatientGender = async (pasienId) => {
   const result = await pool.query('SELECT jenis_kelamin FROM pasien WHERE id = $1', [pasienId]);
   if (result.rows.length === 0) {
@@ -264,6 +322,7 @@ app.post('/api/auth/login', async (req, res) => {
       username: user.username,
       role: user.role,
       nama_lengkap: user.nama_lengkap,
+      foto_profil: user.foto_profil,
       created_at: user.created_at,
     };
 
@@ -274,6 +333,107 @@ app.post('/api/auth/login', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Login gagal', error: error.message });
+  }
+});
+
+app.get('/api/profile', authMiddleware, (req, res) => {
+  const { id, username, role, nama_lengkap, foto_profil, created_at } = req.user;
+  res.json({ data: { id, username, role, nama_lengkap, foto_profil, created_at } });
+});
+
+app.patch('/api/profile', authMiddleware, async (req, res) => {
+  const demoBlocked = denyDemoMutation(req, res);
+  if (demoBlocked) return demoBlocked;
+
+  const { username, nama_lengkap, foto_profil } = req.body || {};
+
+  if ('password' in (req.body || {}) || 'password_hash' in (req.body || {})) {
+    return res.status(400).json({ message: 'Password tidak dapat diubah dari profil.' });
+  }
+
+  const cleanUsername = String(username || '').trim();
+  const cleanName = String(nama_lengkap || '').trim();
+  const nextPhoto = foto_profil === undefined ? req.user.foto_profil : foto_profil;
+
+  if (!cleanUsername || cleanUsername.length > 50 || !cleanName || cleanName.length > 100) {
+    return res.status(400).json({ message: 'Nama dan username wajib diisi dengan panjang yang valid.' });
+  }
+
+  if (nextPhoto !== null && nextPhoto !== undefined && !isValidProfilePhoto(nextPhoto)) {
+    return res.status(400).json({ message: 'Foto profil harus berupa JPEG base64 berukuran valid.' });
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE users
+       SET username = $1, nama_lengkap = $2, foto_profil = $3
+       WHERE id = $4
+       RETURNING id, username, role, nama_lengkap, foto_profil, created_at`,
+      [cleanUsername, cleanName, nextPhoto || null, req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User tidak ditemukan.' });
+    }
+
+    res.json({ message: 'Profil berhasil diperbarui.', data: result.rows[0] });
+  } catch (error) {
+    if (error.code === '23505') {
+      return res.status(409).json({ message: 'Username sudah digunakan.' });
+    }
+    res.status(500).json({ message: 'Gagal memperbarui profil.' });
+  }
+});
+
+app.get('/api/notifications', authMiddleware, async (req, res) => {
+  try {
+    const [notifications, unread] = await Promise.all([
+      pool.query(
+        `SELECT id, title, message, href, created_at, read_at
+         FROM notifications WHERE user_id = $1
+         ORDER BY created_at DESC LIMIT 30`,
+        [req.user.id]
+      ),
+      pool.query(
+        'SELECT COUNT(*)::integer AS count FROM notifications WHERE user_id = $1 AND read_at IS NULL',
+        [req.user.id]
+      ),
+    ]);
+
+    res.json({ data: notifications.rows, unread_count: unread.rows[0].count });
+  } catch (error) {
+    res.status(500).json({ message: 'Gagal memuat notifikasi.' });
+  }
+});
+
+app.patch('/api/notifications/read-all', authMiddleware, async (req, res) => {
+  try {
+    await pool.query(
+      'UPDATE notifications SET read_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND read_at IS NULL',
+      [req.user.id]
+    );
+    res.json({ message: 'Semua notifikasi ditandai telah dibaca.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Gagal memperbarui notifikasi.' });
+  }
+});
+
+app.patch('/api/notifications/:id/read', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `UPDATE notifications SET read_at = COALESCE(read_at, CURRENT_TIMESTAMP)
+       WHERE id = $1 AND user_id = $2
+       RETURNING id, read_at`,
+      [req.params.id, req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'Notifikasi tidak ditemukan.' });
+    }
+
+    res.json({ data: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ message: 'Gagal memperbarui notifikasi.' });
   }
 });
 
@@ -754,6 +914,90 @@ app.get('/api/master', authMiddleware, async (req, res) => {
   }
 });
 
+app.get('/api/dashboard/analytics', authMiddleware, async (req, res) => {
+  if (!['admin', 'analis', 'dokter', 'demo'].includes(req.user.role)) {
+    return res.status(403).json({ message: 'Akses analytics tidak tersedia untuk role ini.' });
+  }
+
+  try {
+    const [summary, daily, statuses, categories] = await Promise.all([
+      pool.query(
+        `SELECT
+           COUNT(*) FILTER (
+             WHERE waktu_daftar >= CURRENT_DATE
+               AND waktu_daftar < CURRENT_DATE + INTERVAL '1 day'
+           )::integer AS pemeriksaan_hari_ini,
+           COUNT(*) FILTER (WHERE status = 'menunggu_validasi')::integer AS menunggu_validasi,
+           COUNT(*) FILTER (WHERE status = 'revisi')::integer AS perlu_revisi,
+           COUNT(*) FILTER (WHERE status <> 'selesai')::integer AS order_aktif,
+           COUNT(*) FILTER (WHERE status IN ('menunggu_validasi', 'selesai'))::integer AS hasil_tersimpan,
+           COUNT(*) FILTER (
+             WHERE status = 'selesai'
+               AND waktu_daftar >= CURRENT_DATE - INTERVAL '29 days'
+           )::integer AS selesai_30_hari,
+           COUNT(*)::integer AS total_pemeriksaan,
+           (SELECT COUNT(*)::integer FROM pasien) AS total_pasien,
+           (
+             SELECT COUNT(*)::integer
+             FROM detail_hasil dh
+             JOIN pemeriksaan p ON p.id = dh.pemeriksaan_id
+             WHERE dh.is_abnormal = TRUE
+               AND p.waktu_daftar >= CURRENT_DATE - INTERVAL '29 days'
+           ) AS hasil_abnormal_30_hari
+         FROM pemeriksaan`
+      ),
+      pool.query(
+        `WITH calendar AS (
+           SELECT (CURRENT_DATE - day_offset)::date AS day
+           FROM generate_series(13, 0, -1) AS day_offset
+         )
+         SELECT TO_CHAR(calendar.day, 'YYYY-MM-DD') AS day,
+                COUNT(p.id)::integer AS total
+         FROM calendar
+         LEFT JOIN pemeriksaan p
+           ON p.waktu_daftar >= calendar.day::timestamp
+          AND p.waktu_daftar < (calendar.day + 1)::timestamp
+         GROUP BY calendar.day
+         ORDER BY calendar.day ASC`
+      ),
+      pool.query(
+        `SELECT status, COUNT(*)::integer AS total
+         FROM pemeriksaan
+         GROUP BY status
+         ORDER BY CASE status
+           WHEN 'menunggu' THEN 1
+           WHEN 'proses' THEN 2
+           WHEN 'menunggu_validasi' THEN 3
+           WHEN 'revisi' THEN 4
+           WHEN 'selesai' THEN 5
+           ELSE 6
+         END`
+      ),
+      pool.query(
+        `SELECT COALESCE(k.nama_kategori, 'Tanpa kategori') AS label,
+                COUNT(p.id)::integer AS total
+         FROM pemeriksaan p
+         LEFT JOIN kategori_tes k ON k.id = p.kategori_id
+         WHERE p.waktu_daftar >= CURRENT_DATE - INTERVAL '29 days'
+         GROUP BY k.nama_kategori
+         ORDER BY total DESC, label ASC
+         LIMIT 6`
+      ),
+    ]);
+
+    res.json({
+      data: {
+        summary: summary.rows[0],
+        daily: daily.rows,
+        statuses: statuses.rows,
+        categories: categories.rows,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Gagal memuat analytics dashboard.' });
+  }
+});
+
 app.post('/api/pemeriksaan', authMiddleware, async (req, res) => {
   const demoBlocked = denyDemoMutation(req, res);
   if (demoBlocked) return demoBlocked;
@@ -871,9 +1115,16 @@ app.post('/api/pemeriksaan/:id/hasil', authMiddleware, async (req, res) => {
     return res.status(400).json({ message: 'Data hasil harus berupa array' });
   }
 
+  let client;
   try {
-    const pemeriksaanCheck = await pool.query('SELECT * FROM pemeriksaan WHERE id = $1', [pemeriksaanId]);
+    client = await pool.connect();
+    await client.query('BEGIN');
+    const pemeriksaanCheck = await client.query(
+      'SELECT * FROM pemeriksaan WHERE id = $1 FOR UPDATE',
+      [pemeriksaanId]
+    );
     if (pemeriksaanCheck.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ message: 'Pemeriksaan tidak ditemukan' });
     }
 
@@ -886,7 +1137,7 @@ app.post('/api/pemeriksaan/:id/hasil', authMiddleware, async (req, res) => {
 
       const abnormal = await isOutOfRange(parameterId, nilaiHasil, pemeriksaanCheck.rows[0].pasien_id);
 
-      const queryResult = await pool.query(
+      const queryResult = await client.query(
         `INSERT INTO detail_hasil (pemeriksaan_id, parameter_id, nilai_hasil, is_abnormal, catatan)
          VALUES ($1, $2, $3, $4, $5)
          RETURNING *`,
@@ -896,17 +1147,28 @@ app.post('/api/pemeriksaan/:id/hasil', authMiddleware, async (req, res) => {
       inserted.push(queryResult.rows[0]);
     }
 
-    await pool.query(
+    await client.query(
       `UPDATE pemeriksaan SET status = 'menunggu_validasi' WHERE id = $1`,
       [pemeriksaanId]
     );
+    await insertNotificationsForRole(
+      client,
+      'dokter',
+      'Hasil menunggu validasi',
+      'Ada hasil pemeriksaan baru yang menunggu validasi dokter.',
+      '/dokter/validasi'
+    );
+    await client.query('COMMIT');
 
     res.status(201).json({
       message: 'Hasil lab berhasil disimpan dan menunggu validasi dokter',
       data: inserted,
     });
   } catch (error) {
+    if (client) await client.query('ROLLBACK').catch(() => {});
     res.status(500).json({ message: 'Gagal menyimpan hasil lab', error: error.message });
+  } finally {
+    client?.release();
   }
 });
 
@@ -925,13 +1187,20 @@ app.post('/api/pemeriksaan/:id/validasi', authMiddleware, async (req, res) => {
     return res.status(400).json({ message: 'Status validasi hanya boleh selesai atau revisi' });
   }
 
+  let client;
   try {
-    const pemeriksaanCheck = await pool.query('SELECT * FROM pemeriksaan WHERE id = $1', [pemeriksaanId]);
+    client = await pool.connect();
+    await client.query('BEGIN');
+    const pemeriksaanCheck = await client.query(
+      'SELECT * FROM pemeriksaan WHERE id = $1 FOR UPDATE',
+      [pemeriksaanId]
+    );
     if (pemeriksaanCheck.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ message: 'Pemeriksaan tidak ditemukan' });
     }
 
-    const result = await pool.query(
+    const result = await client.query(
       `UPDATE pemeriksaan
        SET validator_id = $1::integer,
            catatan_dokter = $2,
@@ -941,13 +1210,29 @@ app.post('/api/pemeriksaan/:id/validasi', authMiddleware, async (req, res) => {
        RETURNING *`,
       [validator_id, catatan_dokter || null, status, pemeriksaanId]
     );
+    await client.query(
+      `INSERT INTO notifications (user_id, title, message, href)
+       VALUES ($1, $2, $3, $4)`,
+      [
+        pemeriksaanCheck.rows[0].analis_id,
+        status === 'selesai' ? 'Hasil telah divalidasi' : 'Hasil perlu direvisi',
+        status === 'selesai'
+          ? 'Dokter telah memvalidasi hasil pemeriksaan.'
+          : 'Dokter meminta revisi pada hasil pemeriksaan.',
+        '/analis/hasil',
+      ]
+    );
+    await client.query('COMMIT');
 
     res.json({
       message: status === 'selesai' ? 'Pemeriksaan berhasil divalidasi' : 'Pemeriksaan dikembalikan untuk revisi',
       data: result.rows[0],
     });
   } catch (error) {
+    if (client) await client.query('ROLLBACK').catch(() => {});
     res.status(500).json({ message: 'Gagal memproses validasi dokter', error: error.message });
+  } finally {
+    client?.release();
   }
 });
 

@@ -8,6 +8,7 @@ DROP TABLE IF EXISTS pemeriksaan;
 DROP TABLE IF EXISTS parameter_tes;
 DROP TABLE IF EXISTS kategori_tes;
 DROP TABLE IF EXISTS pasien;
+DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS users;
 
 CREATE TABLE users (
@@ -16,8 +17,22 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'analis', 'dokter', 'demo')),
     nama_lengkap VARCHAR(100) NOT NULL,
+    foto_profil TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE notifications (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(120) NOT NULL,
+    message TEXT NOT NULL,
+    href VARCHAR(255),
+    created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    read_at TIMESTAMP(3)
+);
+
+CREATE INDEX notifications_user_id_read_at_created_at_idx
+    ON notifications (user_id, read_at, created_at);
 
 CREATE TABLE pasien (
     id SERIAL PRIMARY KEY,

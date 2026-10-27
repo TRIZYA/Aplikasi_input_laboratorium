@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { FiEdit3, FiPlus, FiTrash2 } from 'react-icons/fi'
+import { FiActivity, FiEdit3, FiGrid, FiPlus, FiSave, FiTrash2, FiUsers, FiX } from 'react-icons/fi'
 import AppShell from '../../components/Layout/AppShell'
+import AdminAnalytics from '../../components/UI/AdminAnalytics'
+import SummaryMetric from '../../components/UI/SummaryMetric'
 import {
   validateCategoryForm,
   validateParameterForm,
@@ -44,6 +46,8 @@ function AdminPage() {
   const [userRows, setUserRows] = useState([])
   const [kategoriRows, setKategoriRows] = useState([])
   const [parameterRows, setParameterRows] = useState([])
+  const [analytics, setAnalytics] = useState(null)
+  const [analyticsLoading, setAnalyticsLoading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [userLoading, setUserLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -122,12 +126,17 @@ function AdminPage() {
     }
 
     setLoading(true)
+    if (isDashboard) setAnalyticsLoading(true)
     setError('')
 
     try {
-      const data = await fetchAuthJson(buildApiUrl('/api/master'))
+      const [data, analyticsResult] = await Promise.all([
+        fetchAuthJson(buildApiUrl('/api/master')),
+        isDashboard ? fetchAuthJson(buildApiUrl('/api/dashboard/analytics')) : Promise.resolve(null),
+      ])
       setKategoriRows(data.kategori || [])
       setParameterRows(data.parameter || [])
+      if (analyticsResult) setAnalytics(analyticsResult.data)
 
       if ((data.kategori || []).length > 0 && !parameterForm.kategori_id) {
         setParameterForm((current) => ({
@@ -139,8 +148,9 @@ function AdminPage() {
       setError(err.message)
     } finally {
       setLoading(false)
+      if (isDashboard) setAnalyticsLoading(false)
     }
-  }, [parameterForm.kategori_id, token])
+  }, [isDashboard, parameterForm.kategori_id, token])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -481,26 +491,17 @@ function AdminPage() {
       )}
 
       {isDashboard ? (
-        <div className="panel-stack dashboard-summary">
-          <section className="panel">
-            <div className="panel-header">
-              <h3>Ringkasan Operasional</h3>
-            </div>
-            <div className="summary-grid">
-              <div className="summary-card admin">
-                <span>Pengguna Aktif</span>
-                <strong>{userRows.length}</strong>
-              </div>
-              <div className="summary-card admin">
-                <span>Kategori Tes</span>
-                <strong>{kategoriRows.length}</strong>
-              </div>
-              <div className="summary-card admin">
-                <span>Parameter Tes</span>
-                <strong>{parameterRows.length}</strong>
-              </div>
-            </div>
-          </section>
+        <div className="dashboard-summary">
+          <div className="dashboard-summary-heading">
+            <h3>Operasional Laboratorium</h3>
+          </div>
+          <div className="summary-grid">
+            <SummaryMetric icon={FiActivity} label="Pemeriksaan Hari Ini" value={analyticsLoading ? '—' : analytics?.summary?.pemeriksaan_hari_ini ?? 0} tone="admin" />
+            <SummaryMetric icon={FiUsers} label="Menunggu Validasi" value={analyticsLoading ? '—' : analytics?.summary?.menunggu_validasi ?? 0} tone="admin" />
+            <SummaryMetric icon={FiGrid} label="Perlu Revisi" value={analyticsLoading ? '—' : analytics?.summary?.perlu_revisi ?? 0} tone="admin" />
+            <SummaryMetric icon={FiActivity} label="Hasil Abnormal · 30 hari" value={analyticsLoading ? '—' : analytics?.summary?.hasil_abnormal_30_hari ?? 0} tone="admin" />
+          </div>
+          <AdminAnalytics data={analytics} loading={analyticsLoading} error={error} />
         </div>
       ) : (
         <div className="panel-stack">
@@ -687,7 +688,9 @@ function AdminPage() {
           <div className="modal-card" onClick={(event) => event.stopPropagation()}>
             <div className="modal-header">
               <h3>{editingUserId ? 'Edit User' : 'Tambah User'}</h3>
-              <button type="button" className="mini-button" onClick={closeUserModal}>Tutup</button>
+              <button type="button" className="mini-button" onClick={closeUserModal}>
+                <span className="action-button__icon"><FiX /></span><span>Tutup</span>
+              </button>
             </div>
 
             <form onSubmit={handleUserSubmit} className="form-grid modal-form">
@@ -722,7 +725,9 @@ function AdminPage() {
               {userFormError && <div className="error-box">{userFormError}</div>}
 
               <div className="modal-actions">
-                <button type="button" className="mini-button" onClick={closeUserModal}>Batal</button>
+                <button type="button" className="mini-button" onClick={closeUserModal}>
+                  <span className="action-button__icon"><FiX /></span><span>Batal</span>
+                </button>
                 {editingUserId && (
                   <button
                     type="button"
@@ -734,7 +739,10 @@ function AdminPage() {
                     <span>Hapus User</span>
                   </button>
                 )}
-                <button type="submit" className="action-button primary">{editingUserId ? 'Simpan Perubahan' : 'Tambah User'}</button>
+                <button type="submit" className="action-button primary">
+                  <span className="action-button__icon">{editingUserId ? <FiSave /> : <FiPlus />}</span>
+                  <span>{editingUserId ? 'Simpan Perubahan' : 'Tambah User'}</span>
+                </button>
               </div>
             </form>
           </div>
@@ -746,7 +754,9 @@ function AdminPage() {
           <div className="modal-card" onClick={(event) => event.stopPropagation()}>
             <div className="modal-header">
               <h3>{editingCategoryId ? 'Edit Kategori' : 'Tambah Kategori'}</h3>
-              <button type="button" className="mini-button" onClick={closeCategoryModal}>Tutup</button>
+              <button type="button" className="mini-button" onClick={closeCategoryModal}>
+                <span className="action-button__icon"><FiX /></span><span>Tutup</span>
+              </button>
             </div>
 
             <form onSubmit={handleCategorySubmit} className="form-grid modal-form">
@@ -776,8 +786,11 @@ function AdminPage() {
                 </div>
 
                 <div className="modal-actions__right">
-                  <button type="button" className="mini-button" onClick={closeCategoryModal}>Batal</button>
+                  <button type="button" className="mini-button" onClick={closeCategoryModal}>
+                    <span className="action-button__icon"><FiX /></span><span>Batal</span>
+                  </button>
                   <button type="submit" className="action-button primary" disabled={submitting}>
+                    <span className="action-button__icon"><FiSave /></span>
                     {submitting ? 'Menyimpan...' : (editingCategoryId ? 'Simpan Perubahan' : 'Tambah Kategori')}
                   </button>
                 </div>
@@ -792,7 +805,9 @@ function AdminPage() {
           <div className="modal-card modal-card-wide" onClick={(event) => event.stopPropagation()}>
             <div className="modal-header">
               <h3>{editingParameterId ? 'Edit Parameter' : 'Tambah Parameter'}</h3>
-              <button type="button" className="mini-button" onClick={closeParameterModal}>Tutup</button>
+              <button type="button" className="mini-button" onClick={closeParameterModal}>
+                <span className="action-button__icon"><FiX /></span><span>Tutup</span>
+              </button>
             </div>
 
             <form onSubmit={handleParameterSubmit} className="form-grid modal-form modal-form-grid">
@@ -850,8 +865,11 @@ function AdminPage() {
                 </div>
 
                 <div className="modal-actions__right">
-                  <button type="button" className="mini-button" onClick={closeParameterModal}>Batal</button>
+                  <button type="button" className="mini-button" onClick={closeParameterModal}>
+                    <span className="action-button__icon"><FiX /></span><span>Batal</span>
+                  </button>
                   <button type="submit" className="action-button primary" disabled={submitting}>
+                    <span className="action-button__icon"><FiSave /></span>
                     {submitting ? 'Menyimpan...' : (editingParameterId ? 'Simpan Perubahan' : 'Tambah Parameter')}
                   </button>
                 </div>
@@ -871,8 +889,12 @@ function AdminPage() {
             <div className="modal-actions">
               <div className="modal-actions__left" />
               <div className="modal-actions__right">
-                <button type="button" className="mini-button" onClick={() => setDeleteTarget(null)}>Batal</button>
-                <button type="button" className="action-button danger" onClick={confirmDelete}>Hapus</button>
+                <button type="button" className="mini-button" onClick={() => setDeleteTarget(null)}>
+                  <span className="action-button__icon"><FiX /></span><span>Batal</span>
+                </button>
+                <button type="button" className="action-button danger" onClick={confirmDelete}>
+                  <span className="action-button__icon"><FiTrash2 /></span><span>Hapus</span>
+                </button>
               </div>
             </div>
           </div>

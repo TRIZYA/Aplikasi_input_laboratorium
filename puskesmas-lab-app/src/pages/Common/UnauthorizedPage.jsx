@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { FiArrowLeft } from 'react-icons/fi'
 
 function UnauthorizedPage() {
   return (
@@ -6,7 +7,10 @@ function UnauthorizedPage() {
       <div className="message-card">
         <h1>Hak Akses Ditolak</h1>
         <p>Anda tidak memiliki izin untuk membuka halaman ini.</p>
-        <Link to="/" className="primary-link">Kembali ke Dashboard</Link>
+        <Link to="/" className="primary-link">
+          <span className="action-button__icon"><FiArrowLeft /></span>
+          <span>Kembali ke Dashboard</span>
+        </Link>
       </div>
     </div>
   )

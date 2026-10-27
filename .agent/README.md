@@ -186,3 +186,16 @@ npm run dev -- --host 0.0.0.0
 ## Kesimpulan
 
 Proyek ini sudah memiliki fondasi yang kuat untuk menjadi aplikasi laboratorium puskesmas yang nyata. Tetapi agar benar-benar masuk akal bagi operasional layanan kesehatan, fokus berikutnya bukan hanya CRUD, melainkan alur kerja end-to-end pasien laboratorium: tidak hanya input data, tetapi juga validasi, rekam medis, traceability, dan laporan yang dapat dipakai oleh petugas dan dokter.
+
+## Catatan implementasi terbaru (27 Oktober 2026)
+
+> Status ini memperbarui catatan backlog yang lebih lama di atas.
+
+- Dashboard Admin, Analis, dan Dokter kini menampilkan KPI serta analytics agregat dari data pemeriksaan nyata: tren 14 hari, status, dan kategori 30 hari.
+- Analytics tidak mengirim nama, NIK, atau detail pasien; endpoint `/api/dashboard/analytics` membatasi akses ke role `admin`, `analis`, `dokter`, dan `demo`.
+- Profil dapat diedit sendiri untuk nama, username, dan foto; password tidak dapat diubah dari modal profil. Foto dicrop persegi dan disimpan sebagai JPEG base64 256 x 256.
+- Notifikasi terhubung ke user, memiliki status baca/belum dibaca, dan dibuat pada transisi hasil ke validasi/revisi.
+- Shell memakai sidebar desktop dan bottom navbar ikon pada mobile. Scroll halaman berada di content container; tabel dan grafik memakai scroll internal bila diperlukan.
+- Migration additive profil/notifikasi `20261027000000_profile_notifications` sudah diterapkan ke database yang dikonfigurasi.
+
+Pekerjaan tersisa: audit log, export PDF, pencarian/filter/pagination, pengujian end-to-end, dan persiapan operasional. Credential `.env` yang pernah terpapar harus dirotasi sebelum penggunaan operasional; jangan menaruh nilainya di dokumentasi.

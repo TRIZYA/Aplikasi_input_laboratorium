@@ -191,3 +191,26 @@ src/
 ## 8. Kesimpulan
 
 UI yang ada sudah cukup kuat untuk menjadi fondasi aplikasi lab puskesmas. Namun agar proyek ini benar-benar terasa sebagai sistem laboratorium yang masuk akal, UI harus selalu berdasar pada real workflow klinis: pasien → order → hasil → validasi → laporan. Tanpa itu, sistem hanya akan terasa seperti dashboard CRUD yang belum benar-benar berfungsi untuk kebutuhan laboratorium nyata.
+
+## Pembaruan UI (27 Oktober 2026)
+
+Catatan ini memperbarui status backlog di atas.
+
+### Dashboard analytics per role
+- Admin: pemeriksaan hari ini, menunggu validasi, perlu revisi, abnormal 30 hari.
+- Analis: total pasien, order aktif, hasil tersimpan, abnormal 30 hari.
+- Dokter: antrean validasi, perlu revisi, selesai 30 hari, total pemeriksaan.
+- Semua dashboard menampilkan tren pemeriksaan 14 hari, breakdown status, dan kategori 30 hari dari API agregat tanpa PII.
+- Loading, empty, dan error state harus tetap terlihat; jangan mengisi chart dengan data dummy permanen.
+
+### Shell dan navigasi
+- Topbar: role satu kali, bell notifikasi, avatar, nama dan username; tinggi item 40px.
+- Desktop: sidebar; mobile: bottom navbar ikon saja, fixed 72px plus safe area, tanpa toggle. Tombol logout menjadi ikon terakhir.
+- Hanya route aktif yang disorot. Dashboard tidak ikut aktif pada route anak seperti `/dokter/riwayat`.
+- Scroll halaman berada di content container. Bottom nav tidak boleh menutup konten; tabel/chart menangani scroll horizontal di dalam wrapper sendiri.
+
+### Tombol, tabel, dan profil
+- Tombol aksi konten memakai ikon bermakna dan tetap menyertakan teks; tombol navbar/sidebar/topbar tidak ikut aturan styling tombol konten.
+- Wrapper tabel sejajar dengan heading/konten panel; teks di sel memiliki padding kiri yang cukup. Jangan menggeser wrapper saat hanya teks sel yang perlu inset.
+- Edit profil hanya memuat nama, username, foto. Upload menerima JPG/PNG/WebP, crop harus square, hasil JPEG base64 256 x 256. Tidak ada input password di modal.
+- Notifikasi harus jelas membedakan loading, error, empty, unread, dan read; ownership selalu per user.

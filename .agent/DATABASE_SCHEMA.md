@@ -169,3 +169,33 @@ Untuk membuat aplikasi ini benar-benar siap operasional, disarankan menambahkan 
 - buat log aktivitas untuk kebutuhan audit dan keamanan.
 
 Dengan skema seperti ini, aplikasi tidak hanya “mampu mengelola data”, tetapi juga benar-benar mencerminkan alur laboratorium pasien yang masuk akal untuk layanan kesehatan. 
+
+## 14. Perubahan skema implementasi (27 Oktober 2026)
+
+Bagian ini melengkapi tabel inti di atas dan mencerminkan schema Prisma/migration yang aktif.
+
+### Kolom foto profil pada `users`
+- `foto_profil TEXT NULL` menyimpan JPEG data URL base64 hasil crop persegi 256 x 256.
+- Backend membatasi format, ukuran encoded data, dan dimensi gambar; API profil mengubah hanya user yang berasal dari JWT.
+- Profil mengubah nama, username, dan foto. Password tidak termasuk kontrak endpoint profil.
+
+### Tabel `notifications`
+
+| Kolom | Tipe | Keterangan |
+| :--- | :--- | :--- |
+| `id` | SERIAL | Primary key |
+| `user_id` | INTEGER | FK ke `users.id`, cascade saat user dihapus |
+| `title` | VARCHAR(120) | Judul |
+| `message` | TEXT | Pesan notifikasi |
+| `href` | VARCHAR(255) nullable | Route aplikasi tujuan |
+| `created_at` | TIMESTAMP(3) | Waktu pembuatan |
+| `read_at` | TIMESTAMP(3) nullable | Null berarti belum dibaca |
+
+Index: `(user_id, read_at, created_at)`. Endpoint list/read selalu membatasi baris ke `user_id` dari token, bukan ID bebas dari client.
+
+### Analytics agregat
+- `GET /api/dashboard/analytics` tidak menambah tabel dan tidak mengembalikan PII.
+- Response mencakup KPI operasional, 14 titik harian, distribusi status, dan kategori tes 30 hari.
+- Endpoint tersedia untuk `admin`, `analis`, `dokter`, dan `demo`; data diperoleh dengan query agregat atas tabel pemeriksaan, detail hasil, pasien, dan kategori.
+
+Migration `prisma/migrations/20261027000000_profile_notifications/migration.sql` bersifat additive dan sudah diterapkan pada database yang dikonfigurasi. `DATABASE_URL` diprioritaskan oleh `backend/dbConfig.js`; jangan dokumentasikan nilai URL atau password. Jangan menjalankan `backend/init_db.sql` untuk update biasa karena script tersebut mereset tabel.

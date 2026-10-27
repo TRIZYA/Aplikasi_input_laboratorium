@@ -13,9 +13,11 @@ model User {
   passwordHash String       @map("password_hash") @db.VarChar(255)
   role         String       @db.VarChar(20)
   namaLengkap  String       @map("nama_lengkap") @db.VarChar(100)
+  fotoProfil   String?      @map("foto_profil") @db.Text
   createdAt    DateTime     @default(now()) @map("created_at")
   pemeriksaanAnalis Pemeriksaan[] @relation("AnalisPemeriksaan")
   pemeriksaanValidator Pemeriksaan[] @relation("ValidatorPemeriksaan")
+  notifications Notification[]
 
   @@map("users")
 }
@@ -96,4 +98,18 @@ model DetailHasil {
   parameter     ParameterTes @relation(fields: [parameterId], references: [id], onDelete: Restrict)
 
   @@map("detail_hasil")
+}
+
+model Notification {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  title     String    @db.VarChar(120)
+  message   String    @db.Text
+  href      String?   @db.VarChar(255)
+  createdAt DateTime  @default(now()) @map("created_at")
+  readAt    DateTime? @map("read_at")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+  @@map("notifications")
 }

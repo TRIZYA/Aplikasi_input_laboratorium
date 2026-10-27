@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
+import { FiCheckCircle, FiClock, FiCornerUpLeft, FiEye, FiFileText } from 'react-icons/fi'
 import AppShell from '../../components/Layout/AppShell'
+import AdminAnalytics from '../../components/UI/AdminAnalytics'
+import SummaryMetric from '../../components/UI/SummaryMetric'
+import { useDashboardAnalytics } from '../../hooks/useDashboardAnalytics'
 import { usePageAlerts } from '../../hooks/usePageAlerts'
 import { buildApiUrl } from '../../utils/api'
 import { getStoredAuth } from '../../utils/auth'
@@ -38,6 +42,7 @@ function DokterPage() {
   const token = auth?.token
   const currentUserId = auth?.user?.id
   const isDemoUser = auth?.user?.role === 'demo'
+  const { data: dashboardAnalytics, loading: analyticsLoading, error: analyticsError } = useDashboardAnalytics(isDashboard)
 
   const [pemeriksaanRows, setPemeriksaanRows] = useState([])
   const [selectedId, setSelectedId] = useState(null)
@@ -172,26 +177,17 @@ function DokterPage() {
       )}
 
       {isDashboard ? (
-        <div className="panel-stack dashboard-summary">
-          <section className="panel">
-            <div className="panel-header">
-              <h3>Ringkasan Dokter</h3>
-            </div>
-            <div className="summary-grid">
-              <div className="summary-card dokter">
-                <span>Antrean Validasi</span>
-                <strong>{pendingRows.length}</strong>
-              </div>
-              <div className="summary-card dokter">
-                <span>Pasien Direview</span>
-                <strong>{pemeriksaanRows.filter((row) => row.status === 'selesai').length}</strong>
-              </div>
-              <div className="summary-card dokter">
-                <span>Riwayat</span>
-                <strong>{pemeriksaanRows.length}</strong>
-              </div>
-            </div>
-          </section>
+        <div className="dashboard-summary">
+          <div className="dashboard-summary-heading">
+            <h3>Ringkasan Dokter</h3>
+          </div>
+          <div className="summary-grid">
+            <SummaryMetric icon={FiCheckCircle} label="Antrean Validasi" value={analyticsLoading ? '—' : dashboardAnalytics?.summary?.menunggu_validasi ?? 0} tone="dokter" />
+            <SummaryMetric icon={FiCornerUpLeft} label="Perlu Revisi" value={analyticsLoading ? '—' : dashboardAnalytics?.summary?.perlu_revisi ?? 0} tone="dokter" />
+            <SummaryMetric icon={FiClock} label="Selesai · 30 hari" value={analyticsLoading ? '—' : dashboardAnalytics?.summary?.selesai_30_hari ?? 0} tone="dokter" />
+            <SummaryMetric icon={FiFileText} label="Total Pemeriksaan" value={analyticsLoading ? '—' : dashboardAnalytics?.summary?.total_pemeriksaan ?? 0} tone="dokter" />
+          </div>
+          <AdminAnalytics data={dashboardAnalytics} loading={analyticsLoading} error={analyticsError} />
         </div>
       ) : (
         <div className="panel-stack">
@@ -226,7 +222,9 @@ function DokterPage() {
                             <td>{statusLabel[row.status] || row.status}</td>
                             <td>{row.is_cito ? <span className="status-pill danger">CITO</span> : <span className="status-pill neutral">Reguler</span>}</td>
                             <td>
-                              <button type="button" className="mini-button success" onClick={() => setSelectedId(row.id)}>Review</button>
+                              <button type="button" className="mini-button success" onClick={() => setSelectedId(row.id)}>
+                                <span className="action-button__icon"><FiEye /></span><span>Review</span>
+                              </button>
                             </td>
                           </tr>
                         ))
@@ -308,9 +306,11 @@ function DokterPage() {
                     {!isDemoUser && (
                       <div className="action-row">
                         <button type="button" className="action-button danger" onClick={() => handleValidasi('revisi')} disabled={submitting}>
+                          <span className="action-button__icon"><FiCornerUpLeft /></span>
                           {submitting ? 'Memproses...' : 'Tolak / Revisi'}
                         </button>
                         <button type="button" className="action-button success" onClick={() => handleValidasi('selesai')} disabled={submitting}>
+                          <span className="action-button__icon"><FiCheckCircle /></span>
                           {submitting ? 'Memproses...' : 'Validasi & Sahkan'}
                         </button>
                       </div>
